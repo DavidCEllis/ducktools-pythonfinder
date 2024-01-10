@@ -3,4 +3,8 @@ from .dist_python_search import get_dist_pythons
 
 
 def get_python_installs():
-    return [*get_pyenv_pythons(), *get_dist_pythons()]
+    return sorted(
+        get_pyenv_pythons() + get_dist_pythons(),
+        key=lambda x: x.version,
+        reverse=True,
+    )

@@ -37,7 +37,6 @@ PYENV_VERSIONS_FOLDER = os.path.expanduser(os.path.join("~", ".pyenv", "versions
 def get_pyenv_pythons(
     versions_folder: str | os.PathLike = PYENV_VERSIONS_FOLDER,
 ) -> list[PythonInstall]:
-
     if not os.path.exists(versions_folder):
         return []
 
@@ -56,10 +55,8 @@ def get_pyenv_pythons(
                         version=py_ver,
                         executable=executable,
                         implementation="pypy",
-                        metadata={"pypy_version": pypy_ver}
+                        metadata={"pypy_version": pypy_ver},
                     )
                 )
-
-    python_versions.sort(key=lambda x: x.version, reverse=True)
 
     return python_versions

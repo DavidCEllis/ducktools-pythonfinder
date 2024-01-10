@@ -10,9 +10,8 @@ PYENV_VERSIONS_FOLDER = os.path.expanduser(
 
 
 def get_pyenv_pythons(
-        versions_folder: str | os.PathLike = PYENV_VERSIONS_FOLDER,
+    versions_folder: str | os.PathLike = PYENV_VERSIONS_FOLDER,
 ) -> list[PythonInstall]:
-
     if not os.path.exists(versions_folder):
         return []
 
@@ -29,14 +28,14 @@ def get_pyenv_pythons(
                     python_versions.append(
                         PythonInstall.from_str(version, executable, architecture=arch)
                     )
-                case (version, ):
+                case (version,):
                     # If no arch given pyenv will be 64 bit
                     python_versions.append(
-                        PythonInstall.from_str(version, executable, architecture="64bit")
+                        PythonInstall.from_str(
+                            version, executable, architecture="64bit"
+                        )
                     )
                 case _:
                     pass  # Skip unrecognised versions
-
-    python_versions.sort(key=lambda x: x.version, reverse=True)
 
     return python_versions

@@ -23,12 +23,14 @@ from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 
 from ..shared import PythonInstall
 
-_laz = LazyImporter([
-    ModuleImport("re"),
-    ModuleImport("subprocess"),
-    ModuleImport("platform"),
-    FromImport("glob", "glob"),
-])
+_laz = LazyImporter(
+    [
+        ModuleImport("re"),
+        ModuleImport("subprocess"),
+        ModuleImport("platform"),
+        FromImport("glob", "glob"),
+    ]
+)
 
 
 BIN_FOLDER = "/usr/bin"
@@ -79,4 +81,4 @@ def get_dist_pythons(base_folder=BIN_FOLDER):
                     )
                 )
 
-    return sorted(installs, key=lambda x: x.version, reverse=True)
+    return installs

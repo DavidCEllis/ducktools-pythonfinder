@@ -27,12 +27,12 @@ class PythonInstall:
 
     @classmethod
     def from_str(
-            cls,
-            version: str,
-            executable: str,
-            architecture: str = "64bit",
-            implementation: str = "cpython",
-            metadata: dict | None = None,
+        cls,
+        version: str,
+        executable: str,
+        architecture: str = "64bit",
+        implementation: str = "cpython",
+        metadata: dict | None = None,
     ):
         version_tuple = tuple(int(val) for val in version.split("."))
 
