@@ -1,4 +1,4 @@
-# <one line to give the program's name and a brief idea of what it does.>
+# DuckTools-EnvMan
 # Copyright (C) 2024 David C Ellis
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,4 +14,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# Find platform python versions
+
 __version__ = "v0.0.1"
+
+import sys
+
+match sys.platform:
+    case "win32":
+        from .win32 import get_python_installs
+    case "darwin":
+        from .darwin import get_python_installs
+    case _:
+        from .linux import get_python_installs
