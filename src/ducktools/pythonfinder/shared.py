@@ -37,6 +37,10 @@ class PythonInstall:
     implementation: str = "cpython"
     metadata: dict = attribute(default_factory=dict)
 
+    @property
+    def version_str(self) -> str:
+        return ".".join(str(item) for item in self.version)
+
     @classmethod
     def from_str(
         cls,
