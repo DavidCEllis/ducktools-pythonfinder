@@ -12,11 +12,11 @@ satisfy such a requirement.
 ## Currently Finds ##
 
 On Linux:
-* pyenv installs in $(pyenv root)
+* pyenv installs in $PYENV_ROOT
 * system python installs
 
 On MacOS:
-* pyenv installs in $(pyenv root)
+* pyenv installs in $PYENV_ROOT
 * system python installs
 
 On Windows:
