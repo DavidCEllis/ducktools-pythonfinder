@@ -1,5 +1,12 @@
+from ..shared import PythonInstall, get_folder_pythons
 from .pyenv_search import get_pyenv_pythons
-from .dist_python_search import get_dist_pythons
+
+
+BIN_FOLDER = "/usr/bin"
+
+
+def get_dist_pythons() -> list[PythonInstall]:
+    return get_folder_pythons(BIN_FOLDER)
 
 
 def get_python_installs():
