@@ -60,24 +60,27 @@ class PythonInstall:
 
 # Python finder for folders
 class _LazyPythonRegexes:
-    def __init__(self):
+    def __init__(self, basename="python", version_re=r"^Python\s+(\d+.\d+.\d+)$"):
+        self.basename = basename
+        self.version_re = version_re
         self._is_potential_python = None
         self._python_v_re = None
 
     @property
     def is_potential_python(self):
+        # Python filenames - more specific than the glob to eliminate other packages
         if not self._is_potential_python:
             if sys.platform == "win32":
-                self._is_potential_python = _laz.re.compile(r"^python\d?\.?\d*\.exe$")
+                self._is_potential_python = _laz.re.compile(rf"^{self.basename}\d?\.?\d*\.exe$")
             else:
-                self._is_potential_python = _laz.re.compile(r"^python\d?\.?\d*$")
+                self._is_potential_python = _laz.re.compile(rf"^{self.basename}\d?\.?\d*$")
         return self._is_potential_python
 
     @property
     def python_v_re(self):
         # Python version from subprocess output
         if not self._python_v_re:
-            self._python_v_re = _laz.re.compile(r"^Python\s+(\d+.\d+.\d+)$")
+            self._python_v_re = _laz.re.compile(self.version_re)
         return self._python_v_re
 
 
