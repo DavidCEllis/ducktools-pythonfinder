@@ -2,8 +2,31 @@
 
 Find python installs on Linux, Windows and MacOS.
 
-Attempts to find python installed by `pyenv`, system python or python installs
-correctly registered on Windows.
+## Why? ##
+
+For the purposes of PEP723 script dependencies it may be useful to find another version
+of python other than the one currently running in order to satisfy the `requires-python`
+field. This tool is intended to search for potential python installs to attempt to
+satisfy such a requirement.
+
+## Currently Finds ##
+
+On Linux:
+* pyenv installs in $(pyenv root)
+* system python installs
+
+On MacOS:
+* pyenv installs in $(pyenv root)
+* system python installs
+
+On Windows:
+* pyenv-win installs in %PYENV_ROOT%
+* Python versions recorded in the registry as in PEP 514 (with additional metadata)
+
+## Planned ##
+
+On MacOS:
+* homebrew installed python
 
 Usage:
 
@@ -14,7 +37,7 @@ from ducktools.pythonfinder import get_python_installs
 user_path = os.path.expanduser("~")
 
 for install in get_python_installs():
-    install.executable = os.path.relpath(install.executable, user_path)
+    install.executable = install.executable.replace(user_path, "~")
     print(install)
 ```
 
