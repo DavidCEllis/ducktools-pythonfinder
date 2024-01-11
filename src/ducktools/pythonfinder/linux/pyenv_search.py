@@ -1,4 +1,4 @@
-# DuckTools-EnvMan
+# ducktools-pythonfinder
 # Copyright (C) 2024 David C Ellis
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Discover python installs that have been created with pyenv or pyenv-win
+Discover python installs that have been created with pyenv
 """
 
 import os

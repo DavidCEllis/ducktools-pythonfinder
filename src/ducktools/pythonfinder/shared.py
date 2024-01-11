@@ -13,6 +13,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import sys
+import os
 import os.path
 
 from prefab_classes import prefab, attribute
@@ -64,7 +66,10 @@ class _LazyPythonRegexes:
     @property
     def is_potential_python(self):
         if not self._is_potential_python:
-            self._is_potential_python = _laz.re.compile(r"^python\d?\.?\d*$")
+            if sys.platform == "win32":
+                self._is_potential_python = _laz.re.compile(r"^python\d?\.?\d*\.exe$")
+            else:
+                self._is_potential_python = _laz.re.compile(r"^python\d?\.?\d*$")
         return self._is_potential_python
 
     @property
@@ -78,9 +83,12 @@ class _LazyPythonRegexes:
 REGEXES = _LazyPythonRegexes()
 
 
-def get_folder_pythons(base_folder):
+def get_folder_pythons(base_folder: str | os.PathLike):
     installs = []
-    potential_py = _laz.glob(os.path.join(base_folder, "python*"))
+    if sys.platform == "win32":
+        potential_py = _laz.glob(os.path.join(base_folder, "python*.exe"))
+    else:
+        potential_py = _laz.glob(os.path.join(base_folder, "python*"))
     for executable_path in potential_py:
         basename = os.path.relpath(executable_path, base_folder)
         if _laz.re.fullmatch(REGEXES.is_potential_python, basename):
@@ -101,4 +109,4 @@ def get_folder_pythons(base_folder):
                     )
                 )
 
-    return sorted(installs, key=lambda x: x.version, reverse=True)
+    return installs
