@@ -15,7 +15,7 @@ readme="README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ducktools-lazyimporter",
-    "prefab_classes",
+    "prefab-classes",
 ]
 classifiers = [
     "Development Status :: 1 - Planning",
