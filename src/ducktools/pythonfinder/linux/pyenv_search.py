@@ -31,7 +31,7 @@ PYTHON_VER_RE = r"\d{1,2}\.\d{1,2}\.\d+"
 PYPY_VER_RE = r"^pypy(?P<pyversion>\d{1,2}\.\d+)-(?P<pypyversion>[\d\.]*)$"
 
 
-PYENV_VERSIONS_FOLDER = os.path.expanduser(os.path.join("~", ".pyenv", "versions"))
+PYENV_VERSIONS_FOLDER = os.path.expandvars(os.path.join("$(pyenv root)", "versions"))
 
 
 def get_pyenv_pythons(

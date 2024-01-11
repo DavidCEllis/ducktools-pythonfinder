@@ -20,9 +20,7 @@ import os.path
 from ..shared import PythonInstall
 
 
-PYENV_VERSIONS_FOLDER = os.path.expanduser(
-    os.path.join("~", ".pyenv", "pyenv-win", "versions")
-)
+PYENV_VERSIONS_FOLDER = os.path.join(os.path.expandvars("%PYENV_ROOT%"), "versions")
 
 
 def get_pyenv_pythons(
