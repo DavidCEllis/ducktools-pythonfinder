@@ -19,15 +19,20 @@ from ..shared import get_folder_pythons, PythonInstall
 
 
 BIN_FOLDER = "/usr/bin"
+SYMLINK_FOLDER = "/usr/local/bin"
 
 
 def get_os_pythons() -> list[PythonInstall]:
     return get_folder_pythons(BIN_FOLDER)
 
 
+def get_installed_pythons() -> list[PythonInstall]:
+    return get_folder_pythons(SYMLINK_FOLDER)
+
+
 def get_python_installs() -> list[PythonInstall]:
     return sorted(
-        get_pyenv_pythons() + get_os_pythons(),
+        get_pyenv_pythons() + get_installed_pythons() + get_os_pythons(),
         key=lambda x: x.version,
         reverse=True,
     )
