@@ -25,11 +25,22 @@ from ducktools.lazyimporter import LazyImporter, ModuleImport
 
 from ..shared import PythonInstall
 
-_laz = LazyImporter([ModuleImport("re")])
+_laz = LazyImporter(
+    [
+        ModuleImport("re"),
+        ModuleImport("subprocess"),
+    ]
+)
 
+# pyenv folder names
 PYTHON_VER_RE = r"\d{1,2}\.\d{1,2}\.\d+"
 PYPY_VER_RE = r"^pypy(?P<pyversion>\d{1,2}\.\d+)-(?P<pypyversion>[\d\.]*)$"
 
+# 'pypy -V' output matcher
+PYPY_V_OUTPUT = (
+    r"(?is)python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*).*?"
+    r"pypy (?P<pypy_version>\d+\.\d+\.\d+[a-z]*\d*).*"
+)
 
 PYENV_VERSIONS_FOLDER = os.path.expandvars(os.path.join("$PYENV_ROOT", "versions"))
 
@@ -47,16 +58,30 @@ def get_pyenv_pythons(
         if os.path.exists(executable):
             if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
                 python_versions.append(PythonInstall.from_str(p.name, executable))
-            elif vermatches := _laz.re.fullmatch(PYPY_VER_RE, p.name):
-                py_ver = vermatches.group("pyversion")
-                pypy_ver = vermatches.group("pypyversion")
-                python_versions.append(
-                    PythonInstall.from_str(
-                        version=py_ver,
-                        executable=executable,
-                        implementation="pypy",
-                        metadata={"pypy_version": pypy_ver},
-                    )
+            elif _laz.re.fullmatch(PYPY_VER_RE, p.name):
+                version_output = (
+                    _laz.subprocess.run(
+                        [executable, "-V"],
+                        capture_output=True
+                    ).stdout.decode("utf-8").strip()
                 )
+
+                ver_matches = _laz.re.fullmatch(
+                    PYPY_V_OUTPUT,
+                    version_output,
+                )
+
+                if ver_matches:
+                    py_ver = ver_matches.group("python_version")
+                    pypy_ver = ver_matches.group("pypy_version")
+
+                    python_versions.append(
+                        PythonInstall.from_str(
+                            version=py_ver,
+                            executable=executable,
+                            implementation="pypy",
+                            metadata={"pypy_version": pypy_ver},
+                        )
+                    )
 
     return python_versions

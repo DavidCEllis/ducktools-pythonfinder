@@ -29,7 +29,7 @@ _laz = LazyImporter([
 ])
 
 
-version_re = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<micro>\d+)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<micro>\d+)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
 
 
 @prefab
@@ -70,7 +70,7 @@ class PythonInstall:
         implementation: str = "cpython",
         metadata: dict | None = None,
     ):
-        parsed_version = _laz.re.fullmatch(version_re, version)
+        parsed_version = _laz.re.fullmatch(FULL_PY_VER_RE, version)
 
         if not parsed_version:
             raise ValueError(f"{version!r} is not a recognised Python version string.")
