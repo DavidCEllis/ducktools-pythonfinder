@@ -29,9 +29,12 @@ _laz = LazyImporter([
 ])
 
 
+version_re = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<micro>\d+)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+
+
 @prefab
 class PythonInstall:
-    version: tuple[int, ...]
+    version: tuple[int, int, int, str, int]
     executable: str
     architecture: str = "64bit"
     implementation: str = "cpython"
@@ -39,7 +42,24 @@ class PythonInstall:
 
     @property
     def version_str(self) -> str:
-        return ".".join(str(item) for item in self.version)
+        major, minor, micro, releaselevel, serial = self.version
+
+        match releaselevel:
+            case "alpha":
+                releaselevel = "a"
+            case "beta":
+                releaselevel = "b"
+            case "candidate":
+                releaselevel = "rc"
+            case _:
+                releaselevel = ""
+
+        if serial == 0:
+            serial = ''
+        else:
+            serial = f"{serial}"
+
+        return f"{major}.{minor}.{micro}{releaselevel}{serial}"
 
     @classmethod
     def from_str(
@@ -50,7 +70,30 @@ class PythonInstall:
         implementation: str = "cpython",
         metadata: dict | None = None,
     ):
-        version_tuple = tuple(int(val) for val in version.split("."))
+        parsed_version = _laz.re.fullmatch(version_re, version)
+
+        if not parsed_version:
+            raise ValueError(f"{version!r} is not a recognised Python version string.")
+
+        major, minor, micro, releaselevel, serial = parsed_version.groups()
+
+        match releaselevel:
+            case "a":
+                releaselevel = "alpha"
+            case "b":
+                releaselevel = "beta"
+            case "rc":
+                releaselevel = "candidate"
+            case _:
+                releaselevel = "final"
+
+        version_tuple = (
+            int(major),
+            int(minor),
+            int(micro),
+            releaselevel,
+            int(serial if serial != "" else 0),
+        )
 
         # noinspection PyArgumentList
         return cls(
@@ -64,9 +107,9 @@ class PythonInstall:
 
 # Python finder for folders
 class _LazyPythonRegexes:
-    def __init__(self, basename="python", version_re=r"^Python\s+(\d+.\d+.\d+)$"):
+    def __init__(self, basename="python", version_str_match=r"^Python\s+(\d+.\d+.\d+)$"):
         self.basename = basename
-        self.version_re = version_re
+        self.version_re = version_str_match
         self._is_potential_python = None
         self._python_v_re = None
 
