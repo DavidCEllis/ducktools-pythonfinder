@@ -22,6 +22,7 @@ On MacOS:
 On Windows:
 * pyenv-win installs in %PYENV_ROOT%
 * Python versions recorded in the registry as in PEP 514 (with additional metadata)
+  * If a pyenv install is done with -r / --register it will be listed with metadata
 
 ## Planned ##
 
