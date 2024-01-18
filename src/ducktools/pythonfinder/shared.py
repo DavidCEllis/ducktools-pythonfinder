@@ -21,12 +21,14 @@ import os.path
 from prefab_classes import prefab, attribute
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
-_laz = LazyImporter([
-    ModuleImport("re"),
-    ModuleImport("subprocess"),
-    ModuleImport("platform"),
-    FromImport("glob", "glob"),
-])
+_laz = LazyImporter(
+    [
+        ModuleImport("re"),
+        ModuleImport("subprocess"),
+        ModuleImport("platform"),
+        FromImport("glob", "glob"),
+    ]
+)
 
 
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<micro>\d+)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
@@ -55,7 +57,7 @@ class PythonInstall:
                 releaselevel = ""
 
         if serial == 0:
-            serial = ''
+            serial = ""
         else:
             serial = f"{serial}"
 
@@ -107,7 +109,9 @@ class PythonInstall:
 
 # Python finder for folders
 class _LazyPythonRegexes:
-    def __init__(self, basename="python", version_str_match=r"^Python\s+(\d+.\d+.\d+)$"):
+    def __init__(
+        self, basename="python", version_str_match=r"^Python\s+(\d+.\d+.\d+)$"
+    ):
         self.basename = basename
         self.version_re = version_str_match
         self._is_potential_python = None
@@ -118,9 +122,13 @@ class _LazyPythonRegexes:
         # Python filenames - more specific than the glob to eliminate other packages
         if not self._is_potential_python:
             if sys.platform == "win32":
-                self._is_potential_python = _laz.re.compile(rf"^{self.basename}\d?\.?\d*\.exe$")
+                self._is_potential_python = _laz.re.compile(
+                    rf"^{self.basename}\d?\.?\d*\.exe$"
+                )
             else:
-                self._is_potential_python = _laz.re.compile(rf"^{self.basename}\d?\.?\d*$")
+                self._is_potential_python = _laz.re.compile(
+                    rf"^{self.basename}\d?\.?\d*$"
+                )
         return self._is_potential_python
 
     @property

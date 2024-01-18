@@ -60,10 +60,9 @@ def get_pyenv_pythons(
                 python_versions.append(PythonInstall.from_str(p.name, executable))
             elif _laz.re.fullmatch(PYPY_VER_RE, p.name):
                 version_output = (
-                    _laz.subprocess.run(
-                        [executable, "-V"],
-                        capture_output=True
-                    ).stdout.decode("utf-8").strip()
+                    _laz.subprocess.run([executable, "-V"], capture_output=True)
+                    .stdout.decode("utf-8")
+                    .strip()
                 )
 
                 ver_matches = _laz.re.fullmatch(

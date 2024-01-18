@@ -20,7 +20,9 @@ from ducktools.pythonfinder import get_python_installs
 def main():
     installs = get_python_installs()
     headings = ["Python Version", "Executable Location"]
-    max_executable_len = max(len(headings[1]), max(len(inst.executable) for inst in installs))
+    max_executable_len = max(
+        len(headings[1]), max(len(inst.executable) for inst in installs)
+    )
     headings_str = f"| {headings[0]} | {headings[1]:<{max_executable_len}s} |"
 
     print(headings_str)
