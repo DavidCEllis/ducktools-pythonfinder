@@ -42,7 +42,7 @@ PYPY_V_OUTPUT = (
     r"pypy (?P<pypy_version>\d+\.\d+\.\d+[a-z]*\d*).*"
 )
 
-PYENV_VERSIONS_FOLDER = os.path.expandvars(os.path.join("$PYENV_ROOT", "versions"))
+PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions")
 
 
 def get_pyenv_pythons(
