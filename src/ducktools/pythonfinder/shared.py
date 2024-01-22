@@ -112,7 +112,7 @@ class _LazyPythonRegexes:
     def __init__(
         self,
         basename="python",
-        version_str_match=r"$(?is)python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*)$",
+        version_str_match=r"^(?is)python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*)$",
     ):
         self.basename = basename
         self.version_re = version_str_match
@@ -150,7 +150,7 @@ def parse_version_output(executable: str) -> str | None:
         .stdout.decode("utf-8")
         .strip()
     )
-
+    print(version_output)
     version_match = _laz.re.match(REGEXES.python_v_re, version_output)
     if version_match:
         version_txt = version_match.group("python_version")
