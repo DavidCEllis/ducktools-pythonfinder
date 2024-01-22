@@ -110,7 +110,9 @@ class PythonInstall:
 # Python finder for folders
 class _LazyPythonRegexes:
     def __init__(
-        self, basename="python", version_str_match=r"^Python\s+(\d+.\d+.\d+)$"
+        self,
+        basename="python",
+        version_str_match=r"$(?is)python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*)$",
     ):
         self.basename = basename
         self.version_re = version_str_match
@@ -142,6 +144,20 @@ class _LazyPythonRegexes:
 REGEXES = _LazyPythonRegexes()
 
 
+def parse_version_output(executable: str) -> str | None:
+    version_output = (
+        _laz.subprocess.run([executable, "-V"], capture_output=True)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+
+    version_match = _laz.re.match(REGEXES.python_v_re, version_output)
+    if version_match:
+        version_txt = version_match.group("python_version")
+        return version_txt
+    return None
+
+
 def get_folder_pythons(base_folder: str | os.PathLike):
     installs = []
     if sys.platform == "win32":
@@ -151,15 +167,8 @@ def get_folder_pythons(base_folder: str | os.PathLike):
     for executable_path in potential_py:
         basename = os.path.relpath(executable_path, base_folder)
         if _laz.re.fullmatch(REGEXES.is_potential_python, basename):
-            version_output = (
-                _laz.subprocess.run([executable_path, "-V"], capture_output=True)
-                .stdout.decode("utf-8")
-                .strip()
-            )
-
-            version_match = _laz.re.match(REGEXES.python_v_re, version_output)
-            if version_match:
-                version_txt = version_match.group(1)
+            version_txt = parse_version_output(executable_path)
+            if version_txt:
                 installs.append(
                     PythonInstall.from_str(
                         version=version_txt,
