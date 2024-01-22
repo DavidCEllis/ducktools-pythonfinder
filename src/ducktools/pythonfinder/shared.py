@@ -112,7 +112,7 @@ class _LazyPythonRegexes:
     def __init__(
         self,
         basename="python",
-        version_str_match=r"^(?is)python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*)$",
+        version_str_match=r"(?is)^python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*)$",
     ):
         self.basename = basename
         self.version_re = version_str_match
