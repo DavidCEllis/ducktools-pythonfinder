@@ -150,7 +150,6 @@ def parse_version_output(executable: str) -> str | None:
         .stdout.decode("utf-8")
         .strip()
     )
-    print(version_output)
     version_match = _laz.re.match(REGEXES.python_v_re, version_output)
     if version_match:
         version_txt = version_match.group("python_version")
