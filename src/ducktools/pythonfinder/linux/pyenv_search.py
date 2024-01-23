@@ -33,7 +33,7 @@ _laz = LazyImporter(
 )
 
 # pyenv folder names
-PYTHON_VER_RE = r"\d{1,2}\.\d{1,2}\.\d+\[a-z]*\d*"
+PYTHON_VER_RE = r"\d{1,2}\.\d{1,2}\.\d+[a-z]*\d*"
 PYPY_VER_RE = r"^pypy(?P<pyversion>\d{1,2}\.\d+)-(?P<pypyversion>[\d\.]*)$"
 
 # 'pypy -V' output matcher
