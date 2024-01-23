@@ -39,50 +39,65 @@ check_pairs = [
 ]
 
 
+def enum_keys(key):
+    subkey_count, _, _ = winreg.QueryInfoKey(key)
+    for i in range(subkey_count):
+        yield winreg.EnumKey(key, i)
+
+
+def enum_values(key):
+    _, value_count, _ = winreg.QueryInfoKey(key)
+    for i in range(value_count):
+        yield winreg.EnumValue(key, i)
+
+
 def get_registered_pythons() -> list[PythonInstall]:
     python_installs: list[PythonInstall] = []
 
     for base, py_folder in check_pairs:
+        base_key = None
         try:
             base_key = winreg.OpenKey(base, py_folder)
         except FileNotFoundError:
             continue
+        else:
+            # Query the base folder eg: HKEY_LOCAL_MACHINE\SOFTWARE\Python
+            # The values here should be "companies" as defined in the PEP
+            for company in enum_keys(base_key):
+                if company in exclude_companies:
+                    continue
 
-        subkeys, _, _ = winreg.QueryInfoKey(base_key)
+                with winreg.OpenKey(base_key, company) as company_key:
+                    comp_subkeys, comp_values, _ = winreg.QueryInfoKey(company_key)
+                    comp_metadata = {}
 
-        # Query the base folder eg: HKEY_LOCAL_MACHINE\SOFTWARE\Python
-        # The values here should be "companies" as defined in the PEP
-        for i in range(subkeys):
-            company = winreg.EnumKey(base_key, i)
-            if company not in exclude_companies:
-                company_key = winreg.OpenKey(base_key, company)
-                comp_subkeys, comp_values, _ = winreg.QueryInfoKey(company_key)
-                comp_metadata = {}
-                for j in range(comp_values):
-                    name, data, _ = winreg.EnumValue(company_key, j)
-                    comp_metadata[f"Company{name}"] = data
+                    for name, data, _ in enum_values(company_key):
+                        comp_metadata[f"Company{name}"] = data
 
-                for j in range(comp_subkeys):
-                    metadata = {**comp_metadata}
-                    py_keyname = winreg.EnumKey(company_key, j)
-                    py_key = winreg.OpenKey(company_key, py_keyname)
-                    _, py_values, _ = winreg.QueryInfoKey(py_key)
-                    for k in range(py_values):
-                        name, data, _ = winreg.EnumValue(py_key, k)
-                        metadata[name] = data
+                    for py_keyname in enum_keys(company_key):
+                        metadata = {**comp_metadata}
 
-                    install_key = winreg.OpenKey(py_key, "InstallPath")
-                    python_path = winreg.QueryValueEx(install_key, "ExecutablePath")[0]
-                    python_version = metadata["Version"]
-                    architecture = metadata["SysArchitecture"]
+                        with winreg.OpenKey(company_key, py_keyname) as py_key:
+                            for name, data, _ in enum_values(py_key):
+                                metadata[name] = data
 
-                    python_installs.append(
-                        PythonInstall.from_str(
-                            version=python_version,
-                            executable=python_path,
-                            architecture=architecture,
-                            metadata=metadata,
-                        )
-                    )
+                            with winreg.OpenKey(py_key, "InstallPath") as install_key:
+                                python_path = winreg.QueryValueEx(install_key, "ExecutablePath")[0]
+
+                            python_version = metadata.get("Version")
+                            architecture = metadata.get("SysArchitecture")
+
+                        if python_version:
+                            python_installs.append(
+                                PythonInstall.from_str(
+                                    version=python_version,
+                                    executable=python_path,
+                                    architecture=architecture,
+                                    metadata=metadata,
+                                )
+                            )
+        finally:
+            if base_key:
+                winreg.CloseKey(base_key)
 
     return python_installs
