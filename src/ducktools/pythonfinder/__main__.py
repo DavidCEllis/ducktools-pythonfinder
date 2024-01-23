@@ -27,7 +27,7 @@ def main():
 
     print(headings_str)
     print(f"| {'-' * len(headings[0])} | {'-' * max_executable_len} |")
-    for install in get_python_installs():
+    for install in installs:
         print(
             f"| {install.version_str:>14s} | {install.executable:<{max_executable_len}s} |"
         )
