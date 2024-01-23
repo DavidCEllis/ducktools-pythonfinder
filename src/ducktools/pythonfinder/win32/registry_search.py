@@ -81,15 +81,18 @@ def get_registered_pythons() -> list[PythonInstall]:
                                 metadata[name] = data
 
                             with winreg.OpenKey(py_key, "InstallPath") as install_key:
-                                python_path = winreg.QueryValueEx(
-                                    install_key,
-                                    "ExecutablePath",
-                                )[0]
+                                try:
+                                    python_path, _ = winreg.QueryValueEx(
+                                        install_key,
+                                        "ExecutablePath",
+                                    )
+                                except FileNotFoundError:
+                                    python_path = None
 
                             python_version = metadata.get("Version")
                             architecture = metadata.get("SysArchitecture")
 
-                        if python_version:
+                        if python_path and python_version:
                             python_installs.append(
                                 PythonInstall.from_str(
                                     version=python_version,
