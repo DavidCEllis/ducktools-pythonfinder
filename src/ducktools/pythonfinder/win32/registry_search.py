@@ -32,10 +32,10 @@ exclude_companies = {
 
 check_pairs = [
     # Keys defined in PEP 514
-    (winreg.HKEY_CURRENT_USER, "SOFTWARE\\Python"),
-    (winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Python"),
+    (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Python"),
+    (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Python"),
     # For system wide 32 bit python installs
-    (winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Python"),
+    (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Python"),
 ]
 
 
