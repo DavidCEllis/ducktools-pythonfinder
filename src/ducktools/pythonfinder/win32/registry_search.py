@@ -32,10 +32,10 @@ exclude_companies = {
 
 check_pairs = [
     # Keys defined in PEP 514
-    (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Python"),
-    (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Python"),
+    (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Python", 0),
+    (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Python", winreg.KEY_WOW64_64KEY),
     # For system wide 32 bit python installs
-    (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Python"),
+    (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Python", winreg.KEY_WOW64_32KEY),
 ]
 
 
@@ -54,10 +54,10 @@ def enum_values(key):
 def get_registered_pythons() -> list[PythonInstall]:
     python_installs: list[PythonInstall] = []
 
-    for base, py_folder in check_pairs:
+    for base, py_folder, flags in check_pairs:
         base_key = None
         try:
-            base_key = winreg.OpenKey(base, py_folder)
+            base_key = winreg.OpenKeyEx(base, py_folder, access=winreg.KEY_READ | flags)
         except FileNotFoundError:
             continue
         else:
