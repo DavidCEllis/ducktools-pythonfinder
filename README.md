@@ -2,6 +2,11 @@
 
 Find python installs on Linux, Windows and MacOS.
 
+## Quick usage ##
+
+`python -m ducktools.pythonfinder` will provide a table of installed python versions 
+and their respective folders.
+
 ## Why? ##
 
 For the purposes of PEP723 script dependencies it may be useful to find another version
@@ -28,6 +33,8 @@ On Windows:
 
 On MacOS:
 * homebrew installed python
+
+## Module usage ##
 
 Usage:
 
