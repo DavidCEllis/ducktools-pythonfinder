@@ -68,7 +68,6 @@ def get_registered_pythons() -> list[PythonInstall]:
                     continue
 
                 with winreg.OpenKey(base_key, company) as company_key:
-                    comp_subkeys, comp_values, _ = winreg.QueryInfoKey(company_key)
                     comp_metadata = {}
 
                     for name, data, _ in enum_values(company_key):
