@@ -20,14 +20,6 @@ Get the PythonInstall for the python version running
 
 import sys
 
-from ducktools.pythonfinder.shared import parse_version_output, PythonInstall
+from ducktools.pythonfinder.shared import get_install_details
 
-
-exe = sys.executable
-
-install = PythonInstall.from_str(
-    parse_version_output(exe),
-    exe
-)
-
-print(install)
+print(get_install_details(sys.executable))

@@ -126,7 +126,7 @@ def _python_exe_regex(basename: str = "python"):
         return _laz.re.compile(rf"{basename}\d?\.?\d*")
 
 
-def parse_version_output(executable: str) -> PythonInstall | None:
+def get_install_details(executable: str) -> PythonInstall | None:
     detail_output = (
         _laz.subprocess.run(
             [executable, details_script.__file__],
@@ -156,6 +156,6 @@ def get_folder_pythons(
                 and file_path.is_file()
                 and any(reg.fullmatch(file_path.name) for reg in regexes)
             ):
-                install = parse_version_output(file_path.path)
+                install = get_install_details(file_path.path)
                 if install:
                     yield install
