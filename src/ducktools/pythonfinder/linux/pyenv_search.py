@@ -20,6 +20,7 @@ Discover python installs that have been created with pyenv
 
 import os
 import os.path
+from _collections_abc import Iterator
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport
 
@@ -49,7 +50,7 @@ PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions
 
 def get_pyenv_pythons(
     versions_folder: str | os.PathLike = PYENV_VERSIONS_FOLDER,
-) -> list[PythonInstall]:
+) -> Iterator[PythonInstall]:
     if not os.path.exists(versions_folder):
         return []
 
@@ -59,10 +60,12 @@ def get_pyenv_pythons(
 
         if os.path.exists(executable):
             if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
-                python_versions.append(PythonInstall.from_str(p.name, executable))
+                yield PythonInstall.from_str(p.name, executable)
             elif _laz.re.fullmatch(PYPY_VER_RE, p.name):
                 details_output = (
-                    _laz.subprocess.run([executable, details_script.__file__], capture_output=True)
+                    _laz.subprocess.run(
+                        [executable, details_script.__file__], capture_output=True
+                    )
                     .stdout.decode("utf-8")
                     .strip()
                 )
@@ -73,6 +76,4 @@ def get_pyenv_pythons(
                     except _laz.json.JSONDecodeError:
                         pass
                     else:
-                        python_versions.append(PythonInstall.from_json(**details))
-
-    return python_versions
+                        yield PythonInstall.from_json(**details)

@@ -22,6 +22,7 @@ Based on PEP 514 registry entries.
 """
 
 import winreg  # noqa  # pycharm seems to think winreg doesn't exist in python3.12
+from _collections_abc import Iterator
 
 from ..shared import PythonInstall
 
@@ -51,9 +52,7 @@ def enum_values(key):
         yield winreg.EnumValue(key, i)
 
 
-def get_registered_pythons() -> list[PythonInstall]:
-    python_installs: list[PythonInstall] = []
-
+def get_registered_pythons() -> Iterator[PythonInstall]:
     for base, py_folder, flags in check_pairs:
         base_key = None
         try:
@@ -93,16 +92,13 @@ def get_registered_pythons() -> list[PythonInstall]:
                             architecture = metadata.get("SysArchitecture")
 
                         if python_path and python_version:
-                            python_installs.append(
-                                PythonInstall.from_str(
-                                    version=python_version,
-                                    executable=python_path,
-                                    architecture=architecture,
-                                    metadata=metadata,
-                                )
+                            yield PythonInstall.from_str(
+                                version=python_version,
+                                executable=python_path,
+                                architecture=architecture,
+                                metadata=metadata,
                             )
+
         finally:
             if base_key:
                 winreg.CloseKey(base_key)
-
-    return python_installs

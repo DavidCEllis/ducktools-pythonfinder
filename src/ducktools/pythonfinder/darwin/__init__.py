@@ -31,8 +31,6 @@ def get_installed_pythons() -> list[PythonInstall]:
 
 
 def get_python_installs() -> list[PythonInstall]:
-    return sorted(
-        get_pyenv_pythons() + get_installed_pythons() + get_os_pythons(),
-        key=lambda x: x.version,
-        reverse=True,
-    )
+    yield from get_pyenv_pythons()
+    yield from get_installed_pythons()
+    yield from get_os_pythons()

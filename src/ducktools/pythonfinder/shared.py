@@ -114,7 +114,9 @@ class PythonInstall:
         if arch_ver := metadata.get(f"{implementation}_version"):
             metadata[f"{implementation}_version"] = tuple(arch_ver)
 
-        return cls(tuple(version), executable, architecture, implementation, metadata)  # noqa
+        return cls(
+            tuple(version), executable, architecture, implementation, metadata  # noqa
+        )
 
 
 def _python_exe_regex(basename: str = "python"):
@@ -142,21 +144,18 @@ def parse_version_output(executable: str) -> PythonInstall | None:
     return PythonInstall.from_json(**output)
 
 
-def get_folder_pythons(base_folder: str | os.PathLike, basename="python"):
-    installs = []
-    if sys.platform == "win32":
-        potential_py = _laz.glob(os.path.join(base_folder, f"{basename}*.exe"))
-    else:
-        potential_py = _laz.glob(os.path.join(base_folder, f"{basename}*"))
+def get_folder_pythons(
+    base_folder: str | os.PathLike, basenames: tuple[str] = ("python", "pypy")
+):
+    regexes = [_python_exe_regex(name) for name in basenames]
 
-    py_exe_match = _python_exe_regex(basename)
-
-    for executable_path in potential_py:
-        basename = os.path.relpath(executable_path, base_folder)
-        if _laz.re.fullmatch(py_exe_match, basename):
-            install = parse_version_output(executable_path)
-
-            if install:
-                installs.append(install)
-
-    return installs
+    with os.scandir(base_folder) as fld:
+        for file_path in fld:
+            if (
+                not file_path.is_symlink()
+                and file_path.is_file()
+                and any(reg.fullmatch(file_path.name) for reg in regexes)
+            ):
+                install = parse_version_output(file_path.path)
+                if install:
+                    yield install

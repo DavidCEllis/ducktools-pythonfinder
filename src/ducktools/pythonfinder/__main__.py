@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ducktools.pythonfinder import get_python_installs
+from ducktools.pythonfinder import list_python_installs
 
 
 def main():
-    installs = get_python_installs()
+    installs = list_python_installs()
     headings = ["Python Version", "Executable Location"]
     max_executable_len = max(
         len(headings[1]), max(len(inst.executable) for inst in installs)

@@ -14,20 +14,30 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
+import os.path
+from _collections_abc import Iterator
+
 from ..shared import PythonInstall, get_folder_pythons
 from .pyenv_search import get_pyenv_pythons
 
 
-BIN_FOLDER = "/usr/bin"
+PATH_FOLDERS = os.environ.get("PATH").split(":")
 
 
-def get_dist_pythons() -> list[PythonInstall]:
-    return get_folder_pythons(BIN_FOLDER)
+def get_path_pythons() -> Iterator[PythonInstall]:
+    exe_names = set()
+
+    for fld in PATH_FOLDERS:
+        if "/.pyenv" in fld:
+            continue
+
+        for install in get_folder_pythons(fld):
+            name = os.path.basename(install.executable)
+            if name not in exe_names:
+                yield install
 
 
 def get_python_installs():
-    return sorted(
-        get_pyenv_pythons() + get_dist_pythons(),
-        key=lambda x: x.version,
-        reverse=True,
-    )
+    yield from get_pyenv_pythons()
+    yield from get_path_pythons()

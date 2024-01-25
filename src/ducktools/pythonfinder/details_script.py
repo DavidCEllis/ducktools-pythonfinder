@@ -28,20 +28,21 @@ def main():
     except AttributeError:
         # Probably Python 2
         import platform
+
         implementation = platform.python_implementation().lower()
         metadata = {}
     else:
         if implementation != "cpython":
-            metadata = {f"{implementation}_version": sys.implementation.version}
+            metadata = {"{}_version".format(implementation): sys.implementation.version}
         else:
             metadata = {}
 
     install = dict(
-        version=sys.version_info,
+        version=tuple(sys.version_info),
         executable=sys.executable,
         architecture="64bit" if (sys.maxsize > 2**32) else "32bit",
         implementation=implementation,
-        metadata=metadata
+        metadata=metadata,
     )
 
     sys.stdout.write(json.dumps(install))

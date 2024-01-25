@@ -27,3 +27,7 @@ match sys.platform:
         from .darwin import get_python_installs
     case _:
         from .linux import get_python_installs
+
+
+def list_python_installs():
+    return sorted(get_python_installs(), reverse=True, key=lambda x: x.version)
