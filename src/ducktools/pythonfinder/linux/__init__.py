@@ -16,6 +16,7 @@
 
 import os
 import os.path
+import itertools
 from _collections_abc import Iterator
 
 from ..shared import PythonInstall, get_folder_pythons
@@ -29,15 +30,17 @@ def get_path_pythons() -> Iterator[PythonInstall]:
     exe_names = set()
 
     for fld in PATH_FOLDERS:
-        if "/.pyenv" in fld:
-            continue
-
         for install in get_folder_pythons(fld):
             name = os.path.basename(install.executable)
             if name not in exe_names:
                 yield install
+                exe_names.add(name)
 
 
 def get_python_installs():
-    yield from get_pyenv_pythons()
-    yield from get_path_pythons()
+    listed_pythons = set()
+
+    for py in itertools.chain(get_pyenv_pythons(), get_path_pythons()):
+        if py.executable not in listed_pythons:
+            yield py
+            listed_pythons.add(py.executable)

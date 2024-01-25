@@ -14,23 +14,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..linux import get_pyenv_pythons
-from ..shared import get_folder_pythons, PythonInstall
+"""Currently just copied from linux"""
 
-
-BIN_FOLDER = "/usr/bin"
-SYMLINK_FOLDER = "/usr/local/bin"
-
-
-def get_os_pythons() -> list[PythonInstall]:
-    return get_folder_pythons(BIN_FOLDER)
-
-
-def get_installed_pythons() -> list[PythonInstall]:
-    return get_folder_pythons(SYMLINK_FOLDER)
-
-
-def get_python_installs() -> list[PythonInstall]:
-    yield from get_pyenv_pythons()
-    yield from get_installed_pythons()
-    yield from get_os_pythons()
+from ..linux import get_python_installs, get_path_pythons, get_pyenv_pythons
