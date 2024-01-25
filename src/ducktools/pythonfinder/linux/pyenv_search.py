@@ -73,6 +73,6 @@ def get_pyenv_pythons(
                     except _laz.json.JSONDecodeError:
                         pass
                     else:
-                        python_versions.append(PythonInstall(**details))
+                        python_versions.append(PythonInstall.from_json(**details))
 
     return python_versions

@@ -109,6 +109,13 @@ class PythonInstall:
             metadata=metadata,
         )
 
+    @classmethod
+    def from_json(cls, version, executable, architecture, implementation, metadata):
+        if arch_ver := metadata.get(f"{architecture}_version"):
+            metadata[f"{architecture}_version"] = tuple(arch_ver)
+
+        return cls(tuple(version), executable, architecture, implementation, metadata)  # noqa
+
 
 def _python_exe_regex(basename: str = "python"):
     if sys.platform == "win32":
@@ -132,7 +139,7 @@ def parse_version_output(executable: str) -> PythonInstall | None:
     except _laz.JSONDecodeError:
         return None
 
-    return PythonInstall(**output)
+    return PythonInstall.from_json(**output)
 
 
 def get_folder_pythons(base_folder: str | os.PathLike, basename="python"):
