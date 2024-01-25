@@ -136,7 +136,7 @@ def parse_version_output(executable: str) -> PythonInstall | None:
 
     try:
         output = _laz.json.loads(detail_output)
-    except _laz.JSONDecodeError:
+    except _laz.json.JSONDecodeError:
         return None
 
     return PythonInstall.from_json(**output)
