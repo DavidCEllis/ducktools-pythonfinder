@@ -111,8 +111,8 @@ class PythonInstall:
 
     @classmethod
     def from_json(cls, version, executable, architecture, implementation, metadata):
-        if arch_ver := metadata.get(f"{architecture}_version"):
-            metadata[f"{architecture}_version"] = tuple(arch_ver)
+        if arch_ver := metadata.get(f"{implementation}_version"):
+            metadata[f"{implementation}_version"] = tuple(arch_ver)
 
         return cls(tuple(version), executable, architecture, implementation, metadata)  # noqa
 
