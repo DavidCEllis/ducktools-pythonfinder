@@ -24,11 +24,13 @@ import os.path
 from ducktools.lazyimporter import LazyImporter, ModuleImport
 
 from ..shared import PythonInstall
+from .. import details_script
 
 _laz = LazyImporter(
     [
         ModuleImport("re"),
         ModuleImport("subprocess"),
+        ModuleImport("json"),
     ]
 )
 
@@ -59,28 +61,18 @@ def get_pyenv_pythons(
             if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
                 python_versions.append(PythonInstall.from_str(p.name, executable))
             elif _laz.re.fullmatch(PYPY_VER_RE, p.name):
-                version_output = (
-                    _laz.subprocess.run([executable, "-V"], capture_output=True)
+                details_output = (
+                    _laz.subprocess.run([executable, details_script.__file__], capture_output=True)
                     .stdout.decode("utf-8")
                     .strip()
                 )
 
-                ver_matches = _laz.re.fullmatch(
-                    PYPY_V_OUTPUT,
-                    version_output,
-                )
-
-                if ver_matches:
-                    py_ver = ver_matches.group("python_version")
-                    pypy_ver = ver_matches.group("pypy_version")
-
-                    python_versions.append(
-                        PythonInstall.from_str(
-                            version=py_ver,
-                            executable=executable,
-                            implementation="pypy",
-                            metadata={"pypy_version": pypy_ver},
-                        )
-                    )
+                if details_output:
+                    try:
+                        details = _laz.json.loads(details_output)
+                    except _laz.json.JSONDecodeError:
+                        pass
+                    else:
+                        python_versions.append(PythonInstall(**details))
 
     return python_versions

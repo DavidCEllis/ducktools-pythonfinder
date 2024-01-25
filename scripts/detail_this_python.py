@@ -25,7 +25,7 @@ from ducktools.pythonfinder.shared import parse_version_output, PythonInstall
 
 exe = sys.executable
 
-install = PythonInstall(
+install = PythonInstall.from_str(
     parse_version_output(exe),
     exe
 )

@@ -21,12 +21,15 @@ import os.path
 from prefab_classes import prefab, attribute
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
+from . import details_script
+
 _laz = LazyImporter(
     [
         ModuleImport("re"),
         ModuleImport("subprocess"),
         ModuleImport("platform"),
         FromImport("glob", "glob"),
+        ModuleImport("json"),
     ]
 )
 
@@ -107,73 +110,46 @@ class PythonInstall:
         )
 
 
-# Python finder for folders
-class _LazyPythonRegexes:
-    def __init__(
-        self,
-        basename="python",
-        version_str_match=r"(?is)^python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*)$",
-    ):
-        self.basename = basename
-        self.version_re = version_str_match
-        self._is_potential_python = None
-        self._python_v_re = None
-
-    @property
-    def is_potential_python(self):
-        # Python filenames - more specific than the glob to eliminate other packages
-        if not self._is_potential_python:
-            if sys.platform == "win32":
-                self._is_potential_python = _laz.re.compile(
-                    rf"^{self.basename}\d?\.?\d*\.exe$"
-                )
-            else:
-                self._is_potential_python = _laz.re.compile(
-                    rf"^{self.basename}\d?\.?\d*$"
-                )
-        return self._is_potential_python
-
-    @property
-    def python_v_re(self):
-        # Python version from subprocess output
-        if not self._python_v_re:
-            self._python_v_re = _laz.re.compile(self.version_re)
-        return self._python_v_re
+def _python_exe_regex(basename: str = "python"):
+    if sys.platform == "win32":
+        return _laz.re.compile(rf"{basename}\d?\.?\d*\.exe")
+    else:
+        return _laz.re.compile(rf"{basename}\d?\.?\d*")
 
 
-REGEXES = _LazyPythonRegexes()
-
-
-def parse_version_output(executable: str) -> str | None:
-    version_output = (
-        _laz.subprocess.run([executable, "-V"], capture_output=True)
+def parse_version_output(executable: str) -> PythonInstall | None:
+    detail_output = (
+        _laz.subprocess.run(
+            [executable, details_script.__file__],
+            capture_output=True,
+        )
         .stdout.decode("utf-8")
         .strip()
     )
-    version_match = _laz.re.match(REGEXES.python_v_re, version_output)
-    if version_match:
-        version_txt = version_match.group("python_version")
-        return version_txt
-    return None
+
+    try:
+        output = _laz.json.loads(detail_output)
+    except _laz.JSONDecodeError:
+        return None
+
+    return PythonInstall(**output)
 
 
-def get_folder_pythons(base_folder: str | os.PathLike):
+def get_folder_pythons(base_folder: str | os.PathLike, basename="python"):
     installs = []
     if sys.platform == "win32":
-        potential_py = _laz.glob(os.path.join(base_folder, "python*.exe"))
+        potential_py = _laz.glob(os.path.join(base_folder, f"{basename}*.exe"))
     else:
-        potential_py = _laz.glob(os.path.join(base_folder, "python*"))
+        potential_py = _laz.glob(os.path.join(base_folder, f"{basename}*"))
+
+    py_exe_match = _python_exe_regex(basename)
+
     for executable_path in potential_py:
         basename = os.path.relpath(executable_path, base_folder)
-        if _laz.re.fullmatch(REGEXES.is_potential_python, basename):
-            version_txt = parse_version_output(executable_path)
-            if version_txt:
-                installs.append(
-                    PythonInstall.from_str(
-                        version=version_txt,
-                        executable=executable_path,
-                        architecture=_laz.platform.architecture()[0],
-                    )
-                )
+        if _laz.re.fullmatch(py_exe_match, basename):
+            install = parse_version_output(executable_path)
+
+            if install:
+                installs.append(install)
 
     return installs
