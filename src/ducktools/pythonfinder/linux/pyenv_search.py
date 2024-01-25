@@ -52,9 +52,8 @@ def get_pyenv_pythons(
     versions_folder: str | os.PathLike = PYENV_VERSIONS_FOLDER,
 ) -> Iterator[PythonInstall]:
     if not os.path.exists(versions_folder):
-        return []
+        return
 
-    python_versions = []
     for p in os.scandir(versions_folder):
         executable = os.path.join(p.path, "bin/python")
 

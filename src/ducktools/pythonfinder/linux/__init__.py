@@ -24,12 +24,17 @@ from .pyenv_search import get_pyenv_pythons
 
 
 PATH_FOLDERS = os.environ.get("PATH").split(":")
+_PYENV_ROOT = os.environ.get("PYENV_ROOT")
 
 
 def get_path_pythons() -> Iterator[PythonInstall]:
     exe_names = set()
 
     for fld in PATH_FOLDERS:
+        # Don't retrieve pyenv installs
+        if _PYENV_ROOT and fld.startswith(_PYENV_ROOT):
+            continue
+
         for install in get_folder_pythons(fld):
             name = os.path.basename(install.executable)
             if name not in exe_names:
