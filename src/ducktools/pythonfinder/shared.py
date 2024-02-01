@@ -136,7 +136,7 @@ class PythonInstall:
         )
 
         # Pip call failed
-        if pip_call.return_code != 0:
+        if pip_call.returncode != 0:
             return None
 
         return pip_call.stdout
