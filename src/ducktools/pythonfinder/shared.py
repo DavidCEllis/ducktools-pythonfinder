@@ -118,6 +118,23 @@ class PythonInstall:
             tuple(version), executable, architecture, implementation, metadata  # noqa
         )
 
+    def get_pip_version(self) -> str | None:
+        pip_call = _laz.subprocess.run(
+            [
+                self.executable,
+                "-c",
+                "import pip; print(pip.__version__, end='')"
+            ],
+            text=True,
+            capture_output=True,
+        )
+
+        # Pip call failed
+        if pip_call.return_code != 0:
+            return None
+
+        return pip_call.stdout
+
 
 def _python_exe_regex(basename: str = "python"):
     if sys.platform == "win32":
