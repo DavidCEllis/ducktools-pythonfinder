@@ -79,14 +79,18 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                             for name, data, _ in enum_values(py_key):
                                 metadata[name] = data
 
-                            with winreg.OpenKey(py_key, "InstallPath") as install_key:
-                                try:
-                                    python_path, _ = winreg.QueryValueEx(
-                                        install_key,
-                                        "ExecutablePath",
-                                    )
-                                except FileNotFoundError:
-                                    python_path = None
+                            install_key = None
+                            try:
+                                install_key = winreg.OpenKey(py_key, "InstallPath")
+                                python_path, _ = winreg.QueryValueEx(
+                                    install_key,
+                                    "ExecutablePath",
+                                )
+                            except FileNotFoundError:
+                                python_path = None
+                            finally:
+                                if install_key:
+                                    winreg.CloseKey(install_key)
 
                             python_version = metadata.get("Version")
                             architecture = metadata.get("SysArchitecture")
