@@ -119,6 +119,12 @@ class PythonInstall:
         )
 
     def get_pip_version(self) -> str | None:
+        """
+        Get the version of pip installed on a python install.
+
+        :return: None if pip is not found or the command fails
+                 version number as string otherwise.
+        """
         pip_call = _laz.subprocess.run(
             [
                 self.executable,
