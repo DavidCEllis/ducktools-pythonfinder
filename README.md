@@ -27,10 +27,6 @@ On Windows:
   * If a pyenv install is done with -r / --register it will be listed with metadata
 * pyenv-win installs in %PYENV_ROOT%
 
-## Planned ##
-
-On MacOS:
-* homebrew installed python
 
 ## Module usage ##
 
