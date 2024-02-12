@@ -16,18 +16,16 @@ satisfy such a requirement.
 
 ## Currently Finds ##
 
-On Linux:
-* pyenv installs in $PYENV_ROOT
-* system python installs
-
-On MacOS:
-* pyenv installs in $PYENV_ROOT
-* system python installs
+On Linux and MacOS:
+* pyenv based installs in $PYENV_ROOT
+* 'python' binaries on $PATH
+  * This will find the *first* 'python' and 'pythonX.Y' on path in the same way
+    as calling them in the shell would.
 
 On Windows:
-* pyenv-win installs in %PYENV_ROOT%
 * Python versions recorded in the registry as in PEP 514 (with additional metadata)
   * If a pyenv install is done with -r / --register it will be listed with metadata
+* pyenv-win installs in %PYENV_ROOT%
 
 ## Planned ##
 
