@@ -21,6 +21,9 @@ On Linux and MacOS this will search for `pyenv` installs first and then for any
 `python*` binaries found on `path`. For those found on `path` they will be made
 to run a small script to identify the version.
 
+The python installs will be returned as instances of `PythonInstall` which will
+contain version info and executable path along with some other useful metadata.
+
 ## Why? ##
 
 For the purposes of PEP723 script dependencies it may be useful to find another version
