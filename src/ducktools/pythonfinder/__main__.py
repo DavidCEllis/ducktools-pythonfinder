@@ -16,6 +16,8 @@
 
 from ducktools.pythonfinder import list_python_installs
 
+import sys
+
 
 def main():
     installs = list_python_installs()
@@ -25,12 +27,24 @@ def main():
     )
     headings_str = f"| {headings[0]} | {headings[1]:<{max_executable_len}s} |"
 
+    print("Discoverable Python Installs")
+    print("* - This is the active python executable used to call this module")
+    print(
+        "** - This is the parent python executable of the venv used to call this module"
+    )
+    print()
     print(headings_str)
     print(f"| {'-' * len(headings[0])} | {'-' * max_executable_len} |")
     for install in installs:
-        print(
-            f"| {install.version_str:>14s} | {install.executable:<{max_executable_len}s} |"
-        )
+        version_str = install.version_str
+        if install.executable == sys.executable:
+            version_str = f"*{version_str}"
+        elif sys.prefix != sys.base_prefix and install.executable.startswith(
+            sys.base_prefix
+        ):
+            version_str = f"**{version_str}"
+
+        print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
 
 
 main()
