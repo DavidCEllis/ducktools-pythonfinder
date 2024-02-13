@@ -20,33 +20,39 @@ Get the details from a python install as JSON
 import sys
 
 
-def main():
-    import json
-
+def get_details():
     try:
         implementation = sys.implementation.name
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         # Probably Python 2
         import platform
 
         implementation = platform.python_implementation().lower()
         metadata = {}
     else:
-        if implementation != "cpython":
+        if implementation != "cpython":  # pragma: no cover
             metadata = {"{}_version".format(implementation): sys.implementation.version}
         else:
             metadata = {}
 
     install = dict(
-        version=tuple(sys.version_info),
+        version=list(sys.version_info),
         executable=sys.executable,
         architecture="64bit" if (sys.maxsize > 2**32) else "32bit",
         implementation=implementation,
         metadata=metadata,
     )
 
+    return install
+
+
+def main():
+    import json
+
+    install = get_details()
+
     sys.stdout.write(json.dumps(install))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
