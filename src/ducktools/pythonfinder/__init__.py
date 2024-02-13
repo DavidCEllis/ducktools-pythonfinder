@@ -18,7 +18,14 @@
 
 __version__ = "v0.0.2"
 
+__all__ = [
+    "get_python_installs",
+    "list_python_installs",
+    "PythonInstall",
+]
+
 import sys
+from .shared import PythonInstall
 
 match sys.platform:  # pragma: no cover
     case "win32":
