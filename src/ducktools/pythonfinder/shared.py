@@ -154,8 +154,9 @@ def get_install_details(executable: str) -> PythonInstall | None:
         _laz.subprocess.run(
             [executable, details_script.__file__],
             capture_output=True,
+            text=True,
         )
-        .stdout.decode("utf-8")
+        .stdout
         .strip()
     )
 
