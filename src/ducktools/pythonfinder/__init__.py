@@ -20,7 +20,7 @@ __version__ = "v0.0.2"
 
 import sys
 
-match sys.platform:
+match sys.platform:  # pragma: no cover
     case "win32":
         from .win32 import get_python_installs
     case "darwin":
