@@ -33,7 +33,7 @@ else:
 def test_no_versions_folder():
     with patch("os.path.exists") as exists_mock:
         exists_mock.return_value = False
-        assert get_pyenv_pythons() == []
+        assert list(get_pyenv_pythons()) == []
 
 
 def test_mock_versions_folder():
@@ -52,7 +52,7 @@ def test_mock_versions_folder():
         exists_mock.return_value = True
         scandir_mock.return_value = iter([mock_dir_entry])
 
-        python_versions = get_pyenv_pythons()
+        python_versions = list(get_pyenv_pythons())
 
     assert python_versions == [PythonInstall.from_str(out_ver, out_executable)]
 
@@ -71,7 +71,7 @@ def test_temp_versions_win():
         with open(py_exe, "wb") as _:
             pass
 
-        versions = get_pyenv_pythons(tmpdir)
+        versions = list(get_pyenv_pythons(tmpdir))
 
         assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
 
@@ -92,6 +92,6 @@ def test_temp_versions_non_win():
         with open(py_exe, "wb") as _:
             pass
 
-        versions = get_pyenv_pythons(tmpdir)
+        versions = list(get_pyenv_pythons(tmpdir))
 
         assert versions == [PythonInstall.from_str("3.12.1", py_exe)]

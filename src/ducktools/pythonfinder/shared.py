@@ -126,11 +126,7 @@ class PythonInstall:
                  version number as string otherwise.
         """
         pip_call = _laz.subprocess.run(
-            [
-                self.executable,
-                "-c",
-                "import pip; print(pip.__version__, end='')"
-            ],
+            [self.executable, "-c", "import pip; print(pip.__version__, end='')"],
             text=True,
             capture_output=True,
         )
@@ -150,15 +146,15 @@ def _python_exe_regex(basename: str = "python"):
 
 
 def get_install_details(executable: str) -> PythonInstall | None:
-    detail_output = (
-        _laz.subprocess.run(
+    try:
+        detail_output = _laz.subprocess.run(
             [executable, details_script.__file__],
             capture_output=True,
             text=True,
-        )
-        .stdout
-        .strip()
-    )
+            check=True,
+        ).stdout
+    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+        return None
 
     try:
         output = _laz.json.loads(detail_output)
