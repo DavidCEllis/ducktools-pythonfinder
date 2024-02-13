@@ -5,7 +5,21 @@ Find python installs on Linux, Windows and MacOS.
 ## Quick usage ##
 
 `python -m ducktools.pythonfinder` will provide a table of installed python versions 
-and their respective folders.
+and their respective folders. It will also indicate the python running the
+command if it is found, or the python that is the base for the venv running the command.
+
+The module provides two main functions:
+
+* `get_python_installs` is a generator that will yield each python version it discovers
+* `list_python_installs` will take the python versions discovered by `get_python_installs`
+  and return a sorted list from newest to oldest python version discovered.
+
+On Windows these methods will search the registry for PEP514 recorded python installs
+before checking for any `pyenv-win` installs that have not been registered.
+
+On Linux and MacOS this will search for `pyenv` installs first and then for any 
+`python*` binaries found on `path`. For those found on `path` they will be made
+to run a small script to identify the version.
 
 ## Why? ##
 
@@ -13,20 +27,6 @@ For the purposes of PEP723 script dependencies it may be useful to find another 
 of python other than the one currently running in order to satisfy the `requires-python`
 field. This tool is intended to search for potential python installs to attempt to
 satisfy such a requirement.
-
-## Currently Finds ##
-
-On Linux and MacOS:
-* pyenv based installs in $PYENV_ROOT
-* 'python' binaries on $PATH
-  * This will find the *first* 'python' and 'pythonX.Y' on path in the same way
-    as calling them in the shell would.
-
-On Windows:
-* Python versions recorded in the registry as in PEP 514 (with additional metadata)
-  * If a pyenv install is done with -r / --register it will be listed with metadata
-* pyenv-win installs in %PYENV_ROOT%
-
 
 ## Module usage ##
 
