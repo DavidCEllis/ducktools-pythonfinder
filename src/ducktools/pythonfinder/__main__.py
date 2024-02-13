@@ -28,6 +28,8 @@ def main():
     headings_str = f"| {headings[0]} | {headings[1]:<{max_executable_len}s} |"
 
     print("Discoverable Python Installs")
+    if sys.platform == "win32":
+        print("+ - Listed in the Windows Registry ")
     print("* - This is the active python executable used to call this module")
     print(
         "** - This is the parent python executable of the venv used to call this module"
@@ -43,6 +45,9 @@ def main():
             sys.base_prefix
         ):
             version_str = f"**{version_str}"
+
+        if sys.platform == "win32" and install.metadata.get("InWindowsRegistry"):
+            version_str = f"+{version_str}"
 
         print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
 

@@ -95,6 +95,8 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                             python_version = metadata.get("Version")
                             architecture = metadata.get("SysArchitecture")
 
+                            metadata["InWindowsRegistry"] = True
+
                         if python_path and python_version:
                             yield PythonInstall.from_str(
                                 version=python_version,
