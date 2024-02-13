@@ -17,7 +17,6 @@
 import sys
 import os
 import os.path
-from tempfile import TemporaryDirectory
 
 import pytest
 from unittest.mock import patch, Mock
@@ -58,40 +57,36 @@ def test_mock_versions_folder():
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_temp_versions_win():
-    # Test with real temporary folders
+def test_temp_versions_win(fs):
+    # Test with folders in fake file system
 
-    with TemporaryDirectory() as tmpdir:
-        py_folder = os.path.join(tmpdir, "3.12.1")
-        py_exe = os.path.join(py_folder, "python.exe")
+    tmpdir = "c:\\fake_folder"
 
-        os.mkdir(py_folder)
+    py_folder = os.path.join(tmpdir, "3.12.1")
+    py_exe = os.path.join(py_folder, "python.exe")
 
-        # make python.exe file
-        with open(py_exe, "wb") as _:
-            pass
+    fs.create_dir(py_folder)
+    fs.create_file(py_exe)
 
-        versions = list(get_pyenv_pythons(tmpdir))
+    versions = list(get_pyenv_pythons(tmpdir))
 
-        assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
+    assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
 
 
 # @pytest.mark.skipif(os.environ.get("CI", False), reason="Don't make temporary folders in CI")
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
-def test_temp_versions_non_win():
-    # Test with real temporary folders
+def test_temp_versions_non_win(fs):
+    # Test folders in fake file system
 
-    with TemporaryDirectory() as tmpdir:
-        py_folder = os.path.join(tmpdir, "3.12.1")
-        py_exe = os.path.join(py_folder, "bin/python")
+    tmpdir = "~/.pyenv/versions"
 
-        os.mkdir(py_folder)
-        os.mkdir(os.path.join(py_folder, "bin"))
+    py_folder = os.path.join(tmpdir, "3.12.1")
+    py_exe = os.path.join(py_folder, "bin/python")
 
-        # make python.exe file
-        with open(py_exe, "wb") as _:
-            pass
+    fs.create_dir(py_folder)
+    fs.create_dir(os.path.join(py_folder, "bin"))
+    fs.create_file(py_exe)
 
-        versions = list(get_pyenv_pythons(tmpdir))
+    versions = list(get_pyenv_pythons(tmpdir))
 
-        assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
+    assert versions == [PythonInstall.from_str("3.12.1", py_exe)]

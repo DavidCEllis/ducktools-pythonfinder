@@ -31,7 +31,7 @@ dynamic = ['version']
 "Homepage" = "https://github.com/davidcellis/ducktools-pythonfinder"
 
 [project.optional-dependencies]
-testing = ["pytest", "pytest-cov"]
+testing = ["pytest", "pytest-cov", "pyfakefs"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
