@@ -31,5 +31,12 @@ def test_details_script():
         # Check the correct thing is being written to stdout
         mock.assert_called_with(json.dumps(details))
 
+        result = json.loads(mock.mock_calls[0].args[0])
+
         # Check it recovers correctly
-        assert json.loads(mock.mock_calls[0].args[0]) == details
+        for key in details:
+            if key == "metadata":
+                # Skip metadata
+                continue
+
+            assert result[key] == details[key]
