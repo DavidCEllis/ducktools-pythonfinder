@@ -6,12 +6,12 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name="ducktools-pythonfinder"
-description="Cross platform tool to find available python installations"
+name = "ducktools-pythonfinder"
+description = "Cross platform tool to find available python installations"
 authors = [
-  { name="David C Ellis" },
+    { name = "David C Ellis" },
 ]
-readme="README.md"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ducktools-lazyimporter",
@@ -37,10 +37,10 @@ testing = ["pytest", "pytest-cov", "pyfakefs"]
 where = ["src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "ducktools.pythonfinder.__version__"}
+version = { attr = "ducktools.pythonfinder.__version__" }
 
 [tool.pytest.ini_options]
-addopts= "--cov=src/ --cov-report=term-missing"
+addopts = "--cov=src/ --cov-report=term-missing --cov-report=xml:coverage.xml"
 testpaths = [
     "tests",
 ]
