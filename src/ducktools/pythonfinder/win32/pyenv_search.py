@@ -39,11 +39,17 @@ def get_pyenv_pythons(
                     # win32 in pyenv name means 32 bit python install
                     # 'arm' is the only alternative which will be 64bit
                     arch = "32bit" if arch == "win32" else "64bit"
-                    yield PythonInstall.from_str(version, executable, architecture=arch)
+                    try:
+                        yield PythonInstall.from_str(version, executable, architecture=arch)
+                    except ValueError:
+                        pass
                 case (version,):
                     # If no arch given pyenv will be 64 bit
-                    yield PythonInstall.from_str(
-                        version, executable, architecture="64bit"
-                    )
+                    try:
+                        yield PythonInstall.from_str(
+                            version, executable, architecture="64bit"
+                        )
+                    except ValueError:
+                        pass
                 case _:
                     pass  # Skip unrecognised versions

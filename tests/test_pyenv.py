@@ -57,7 +57,7 @@ def test_mock_versions_folder():
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_temp_versions_win(fs):
+def test_fs_versions_win(fs):
     # Test with folders in fake file system
 
     tmpdir = "c:\\fake_folder"
@@ -72,10 +72,54 @@ def test_temp_versions_win(fs):
 
     assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
+def test_32bit_version(fs):
+    # Test with folders in fake file system
 
-# @pytest.mark.skipif(os.environ.get("CI", False), reason="Don't make temporary folders in CI")
+    tmpdir = "c:\\fake_folder"
+
+    py_folder = os.path.join(tmpdir, "3.12.1-win32")
+    py_exe = os.path.join(py_folder, "python.exe")
+
+    fs.create_dir(py_folder)
+    fs.create_file(py_exe)
+
+    versions = list(get_pyenv_pythons(tmpdir))
+
+    assert versions == [PythonInstall.from_str("3.12.1", py_exe, architecture="32bit")]
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
+def test_invalid_ver_win(fs):
+    # Ignore non-standard versions
+
+    tmpdir = "c:\\fake_folder"
+
+    py_folder = os.path.join(tmpdir, "external-python3.12.1")
+    py_exe = os.path.join(py_folder, "python.exe")
+    
+    fs.create_dir(py_folder)
+    fs.create_file(py_exe)
+
+    py2_folder = os.path.join(tmpdir, "ext3.13.0")
+    py2_exe = os.path.join(py2_folder, "python.exe")
+
+    fs.create_dir(py2_folder)
+    fs.create_file(py2_exe)
+
+    py3_folder = os.path.join(tmpdir, "invalid-version-3.12.1")
+    py3_exe = os.path.join(py3_folder, "python.exe")
+
+    fs.create_dir(py3_folder)
+    fs.create_file(py3_exe)
+
+    versions = list(get_pyenv_pythons(tmpdir))
+
+    assert versions == []
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
-def test_temp_versions_non_win(fs):
+def test_fs_versions_nix(fs):
     # Test folders in fake file system
 
     tmpdir = "~/.pyenv/versions"
@@ -90,3 +134,22 @@ def test_temp_versions_non_win(fs):
     versions = list(get_pyenv_pythons(tmpdir))
 
     assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
+
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
+def test_invalid_ver_nix(fs):
+    # Test folders in fake file system
+
+    tmpdir = "~/.pyenv/versions"
+
+    py_folder = os.path.join(tmpdir, "external-python3.12.1")
+    py_exe = os.path.join(py_folder, "bin/python")
+
+    fs.create_dir(py_folder)
+    fs.create_dir(os.path.join(py_folder, "bin"))
+    fs.create_file(py_exe)
+
+    versions = list(get_pyenv_pythons(tmpdir))
+
+    assert versions == []
