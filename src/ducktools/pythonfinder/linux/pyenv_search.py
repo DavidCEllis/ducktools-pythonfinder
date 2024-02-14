@@ -54,7 +54,11 @@ def get_pyenv_pythons(
     if not os.path.exists(versions_folder):
         return
 
-    for p in os.scandir(versions_folder):
+    # Sorting puts standard python versions before pypy
+    # This can lead to much faster returns by potentially yielding
+    # the required python version before checking pypy
+
+    for p in sorted(os.scandir(versions_folder), key=lambda x: x.path):
         executable = os.path.join(p.path, "bin/python")
 
         if os.path.exists(executable):
