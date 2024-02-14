@@ -1,3 +1,6 @@
+# VSCode folder
+.vscode/
+
 # IntelliJ project files
 .idea
 *.iml
