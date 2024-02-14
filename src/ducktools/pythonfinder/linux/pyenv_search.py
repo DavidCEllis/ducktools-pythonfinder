@@ -61,13 +61,11 @@ def get_pyenv_pythons(
             if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
                 yield PythonInstall.from_str(p.name, executable)
             elif _laz.re.fullmatch(PYPY_VER_RE, p.name):
-                details_output = (
-                    _laz.subprocess.run(
-                        [executable, details_script.__file__], capture_output=True
-                    )
-                    .stdout.decode("utf-8")
-                    .strip()
-                )
+                details_output = _laz.subprocess.run(
+                    [executable, details_script.__file__],
+                    capture_output=True,
+                    text=True,
+                ).stdout
 
                 if details_output:
                     try:

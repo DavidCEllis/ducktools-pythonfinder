@@ -60,7 +60,7 @@ def test_all_versions_parsed():
     # Parse and do not fail.
 
     python_versions = Path(__file__).parent / "sources" / "python_versions.txt"
-    
+
     with open(python_versions) as f:
         for line in f:
             if line.startswith("#"):
@@ -79,7 +79,7 @@ def test_pip_version():
             returncode=0,
             stdout="23.0.1",
         )
-        
+
         mock_run.return_value = return_obj
 
         inst = PythonInstall(tuple(sys.version_info), sys.executable)
@@ -94,13 +94,14 @@ def test_pip_version():
 
         assert pip_ver == "23.0.1"
 
+
 def test_fail_pip_version():
     with patch("subprocess.run") as mock_run:
         return_obj = SimpleNamespace(
             returncode=1,
             stdout="23.0.1",
         )
-        
+
         mock_run.return_value = return_obj
 
         inst = PythonInstall(tuple(sys.version_info), sys.executable)

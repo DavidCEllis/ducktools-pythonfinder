@@ -21,7 +21,11 @@ import subprocess
 
 import pytest
 
-from ducktools.pythonfinder.shared import get_install_details, PythonInstall, get_folder_pythons
+from ducktools.pythonfinder.shared import (
+    get_install_details,
+    PythonInstall,
+    get_folder_pythons,
+)
 from ducktools.pythonfinder import details_script
 
 fake_details_out = PythonInstall(
@@ -32,7 +36,8 @@ fake_details_out = PythonInstall(
     metadata={},
 )
 
-fake_details = textwrap.dedent("""
+fake_details = textwrap.dedent(
+    """
     {
         "version": [3, 10, 11, "final", 0], 
         "executable": "~/.pyenv/versions/3.10.11/python", 
@@ -40,10 +45,13 @@ fake_details = textwrap.dedent("""
         "implementation": "cpython", 
         "metadata": {}
     }
-""")
+"""
+)
 
 
-@pytest.mark.parametrize("output, expected", [(fake_details, fake_details_out), ("InvalidJSON", None)])
+@pytest.mark.parametrize(
+    "output, expected", [(fake_details, fake_details_out), ("InvalidJSON", None)]
+)
 def test_get_install_details(output, expected):
     with patch("subprocess.run") as run_mock:
         mock_out = MagicMock()
@@ -66,9 +74,8 @@ def test_get_install_details(output, expected):
 def test_get_install_details_error():
     with patch(
         "subprocess.run",
-        side_effect=subprocess.CalledProcessError(1, "Unsuccessful Call")
+        side_effect=subprocess.CalledProcessError(1, "Unsuccessful Call"),
     ) as run_mock:
-
         details = get_install_details(fake_details_out.executable)
 
         run_mock.assert_called_with(
@@ -112,7 +119,7 @@ def test_get_folder_pythons(fs):
                 call(python_exe),
                 call(pypy_exe),
             ],
-            any_order=True
+            any_order=True,
         )
 
     assert result == [python_exe, pypy_exe]

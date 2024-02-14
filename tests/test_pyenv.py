@@ -17,16 +17,24 @@
 import sys
 import os
 import os.path
+import textwrap
 
 import pytest
 from unittest.mock import patch, Mock
 
 from ducktools.pythonfinder.shared import PythonInstall
+from ducktools.pythonfinder import details_script
 
 if sys.platform == "win32":
-    from ducktools.pythonfinder.win32.pyenv_search import get_pyenv_pythons, PYENV_VERSIONS_FOLDER
+    from ducktools.pythonfinder.win32.pyenv_search import (
+        get_pyenv_pythons,
+        PYENV_VERSIONS_FOLDER,
+    )
 else:
-    from ducktools.pythonfinder.linux.pyenv_search import get_pyenv_pythons, PYENV_VERSIONS_FOLDER
+    from ducktools.pythonfinder.linux.pyenv_search import (
+        get_pyenv_pythons,
+        PYENV_VERSIONS_FOLDER,
+    )
 
 
 def test_no_versions_folder():
@@ -72,6 +80,7 @@ def test_fs_versions_win(fs):
 
     assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
 
+
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
 def test_32bit_version(fs):
     # Test with folders in fake file system
@@ -97,7 +106,7 @@ def test_invalid_ver_win(fs):
 
     py_folder = os.path.join(tmpdir, "external-python3.12.1")
     py_exe = os.path.join(py_folder, "python.exe")
-    
+
     fs.create_dir(py_folder)
     fs.create_file(py_exe)
 
@@ -136,7 +145,6 @@ def test_fs_versions_nix(fs):
     assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
 
 
-
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
 def test_invalid_ver_nix(fs):
     # Test folders in fake file system
@@ -167,3 +175,48 @@ def test_invalid_ver_nix(fs):
     versions = list(get_pyenv_pythons(tmpdir))
 
     assert versions == []
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
+def test_pypy_version(fs):
+    # Test pypy version retrieval
+
+    ver_folder = "pypy3.10-7.3.15"
+    tmpdir = "~/.pyenv/versions"
+
+    mock_output = textwrap.dedent(
+        """
+        {"version": [3, 10, 13, "final", 0],
+        "executable": "~/.pyenv/versions/pypy3.10-7.3.15/bin/pypy",
+        "architecture": "64bit",
+        "implementation": "pypy",
+        "metadata": {"pypy_version": [7, 3, 15, "final", 0]}}
+        """
+    ).strip()
+
+    py_folder = os.path.join(tmpdir, ver_folder)
+    py_exe = os.path.join(py_folder, "bin/python")
+
+    fs.create_dir(py_folder)
+    fs.create_dir(os.path.join(py_folder, "bin"))
+    fs.create_file(py_exe)
+
+    with patch("subprocess.run") as run_cmd:
+        run_cmd.return_value.stdout = mock_output
+        versions = list(get_pyenv_pythons(tmpdir))
+
+        run_cmd.assert_called_once_with(
+            [py_exe, details_script.__file__],
+            capture_output=True,
+            text=True,
+        )
+
+        out_version = PythonInstall(
+            version=(3, 10, 13, "final", 0),
+            executable="~/.pyenv/versions/pypy3.10-7.3.15/bin/pypy",
+            architecture="64bit",
+            implementation="pypy",
+            metadata={"pypy_version": (7, 3, 15, "final", 0)},
+        )
+
+        assert versions == [out_version]

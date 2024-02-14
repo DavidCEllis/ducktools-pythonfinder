@@ -40,7 +40,9 @@ def get_pyenv_pythons(
                     # 'arm' is the only alternative which will be 64bit
                     arch = "32bit" if arch == "win32" else "64bit"
                     try:
-                        yield PythonInstall.from_str(version, executable, architecture=arch)
+                        yield PythonInstall.from_str(
+                            version, executable, architecture=arch
+                        )
                     except ValueError:
                         pass
                 case (version,):
