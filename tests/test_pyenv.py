@@ -150,6 +150,20 @@ def test_invalid_ver_nix(fs):
     fs.create_dir(os.path.join(py_folder, "bin"))
     fs.create_file(py_exe)
 
+    py2_folder = os.path.join(tmpdir, "ext3.13.0")
+    py2_exe = os.path.join(py2_folder, "bin/python")
+
+    fs.create_dir(py2_folder)
+    fs.create_dir(os.path.join(py2_folder, "bin"))
+    fs.create_file(py2_exe)
+
+    py3_folder = os.path.join(tmpdir, "invalid-version-3.12.1")
+    py3_exe = os.path.join(py3_folder, "bin/python")
+
+    fs.create_dir(py3_folder)
+    fs.create_dir(os.path.join(py3_folder, "bin"))
+    fs.create_file(py3_exe)
+
     versions = list(get_pyenv_pythons(tmpdir))
 
     assert versions == []
