@@ -34,7 +34,7 @@ _laz = LazyImporter(
 )
 
 
-FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<micro>\d+)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
 
 
 @prefab
@@ -95,7 +95,7 @@ class PythonInstall:
         version_tuple = (
             int(major),
             int(minor),
-            int(micro),
+            int(micro) if micro else 0,
             releaselevel,
             int(serial if serial != "" else 0),
         )
