@@ -34,6 +34,8 @@ def get_path_pythons() -> Iterator[PythonInstall]:
         # Don't retrieve pyenv installs
         if _PYENV_ROOT and fld.startswith(_PYENV_ROOT):
             continue
+        elif not os.path.exists(fld):
+            continue
 
         for install in get_folder_pythons(fld):
             name = os.path.basename(install.executable)
