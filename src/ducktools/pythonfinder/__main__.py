@@ -14,12 +14,50 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ducktools.pythonfinder import list_python_installs
 
 import sys
 
+from ducktools.lazyimporter import LazyImporter, ModuleImport
+from ducktools.pythonfinder import list_python_installs
+
+_laz = LazyImporter([ModuleImport("argparse")])
+
+
+def parse_args(args):
+    parser = _laz.argparse.ArgumentParser(
+        prog="ducktools-pythonfinder",
+        description="Discover base Python installs",
+    )
+    parser.add_argument("--min", help="Specify minimum Python version")
+    parser.add_argument("--max", help="Specify maximum Python version")
+    parser.add_argument("--exact", help="Specify exact Python version")
+
+    vals = parser.parse_args(args)
+
+    if vals.min:
+        min_ver = tuple(int(i) for i in vals.min.split("."))
+    else:
+        min_ver = None
+
+    if vals.max:
+        max_ver = tuple(int(i) for i in vals.max.split("."))
+    else:
+        max_ver = None
+
+    if vals.exact:
+        exact = tuple(int(i) for i in vals.exact.split("."))
+    else:
+        exact = None
+
+    return min_ver, max_ver, exact
+
 
 def main():
+    if sys.argv[1:]:
+        min_ver, max_ver, exact = parse_args(sys.argv[1:])
+    else:
+        min_ver, max_ver, exact = None, None, None
+
     installs = list_python_installs()
     headings = ["Python Version", "Executable Location"]
     max_executable_len = max(
@@ -38,6 +76,19 @@ def main():
     print(headings_str)
     print(f"| {'-' * len(headings[0])} | {'-' * max_executable_len} |")
     for install in installs:
+        if min_ver and install.version < min_ver:
+            continue
+        elif max_ver and install.version > max_ver:
+            continue
+        elif exact:
+            mismatch = False
+            for i, val in enumerate(exact):
+                if val != install.version[i]:
+                    mismatch = True
+                    break
+            if mismatch:
+                continue
+
         version_str = install.version_str
         if install.executable == sys.executable:
             version_str = f"*{version_str}"
