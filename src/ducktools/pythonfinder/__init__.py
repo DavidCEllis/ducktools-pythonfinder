@@ -16,7 +16,7 @@
 
 # Find platform python versions
 
-__version__ = "v0.0.2"
+__version__ = "v0.1.0"
 
 __all__ = [
     "get_python_installs",
