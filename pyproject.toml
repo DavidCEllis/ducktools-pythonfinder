@@ -15,7 +15,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ducktools-lazyimporter",
-    "prefab-classes",
+    "ducktools-classbuilder",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
