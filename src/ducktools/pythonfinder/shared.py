@@ -18,7 +18,7 @@ import sys
 import os
 import os.path
 
-from prefab_classes import prefab, attribute
+from ducktools.classbuilder import slotclass, Field, SlotFields
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
 from . import details_script
@@ -37,13 +37,20 @@ _laz = LazyImporter(
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
 
 
-@prefab
+@slotclass
 class PythonInstall:
+    __slots__ = SlotFields(
+        version=Field(),
+        executable=Field(),
+        architecture="64bit",
+        implementation="cpython",
+        metadata=Field(default_factory=dict),
+    )
     version: tuple[int, int, int, str, int]
     executable: str
-    architecture: str = "64bit"
-    implementation: str = "cpython"
-    metadata: dict = attribute(default_factory=dict)
+    architecture: str
+    implementation: str
+    metadata: dict
 
     @property
     def version_str(self) -> str:
