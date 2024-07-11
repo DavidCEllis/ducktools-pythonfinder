@@ -23,7 +23,7 @@
 
 # Find platform python versions
 
-__version__ = "v0.1.1"
+__version__ = "v0.2.0"
 
 __all__ = [
     "get_python_installs",
@@ -34,13 +34,13 @@ __all__ = [
 import sys
 from .shared import PythonInstall
 
-match sys.platform:  # pragma: no cover
-    case "win32":
-        from .win32 import get_python_installs
-    case "darwin":
-        from .darwin import get_python_installs
-    case _:
-        from .linux import get_python_installs
+
+if sys.platform == "win32":
+    from .win32 import get_python_installs
+elif sys.platform == "darwin":
+    from .darwin import get_python_installs
+else:
+    from .linux import get_python_installs
 
 
 def list_python_installs():
