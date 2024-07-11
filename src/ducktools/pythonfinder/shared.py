@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
 import sys
 import os
@@ -63,15 +64,14 @@ class PythonInstall:
     def version_str(self) -> str:
         major, minor, micro, releaselevel, serial = self.version
 
-        match releaselevel:
-            case "alpha":
-                releaselevel = "a"
-            case "beta":
-                releaselevel = "b"
-            case "candidate":
-                releaselevel = "rc"
-            case _:
-                releaselevel = ""
+        if releaselevel == "alpha":
+            releaselevel = "a"
+        elif releaselevel == "beta":
+            releaselevel = "b"
+        elif releaselevel == "candidate":
+            releaselevel = "rc"
+        else:
+            releaselevel = ""
 
         if serial == 0:
             serial = ""
@@ -96,15 +96,14 @@ class PythonInstall:
 
         major, minor, micro, releaselevel, serial = parsed_version.groups()
 
-        match releaselevel:
-            case "a":
-                releaselevel = "alpha"
-            case "b":
-                releaselevel = "beta"
-            case "rc":
-                releaselevel = "candidate"
-            case _:
-                releaselevel = "final"
+        if releaselevel == "a":
+            releaselevel = "alpha"
+        elif releaselevel == "b":
+            releaselevel = "beta"
+        elif releaselevel == "rc":
+            releaselevel = "candidate"
+        else:
+            releaselevel = "final"
 
         version_tuple = (
             int(major),

@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
 import os
 import os.path
@@ -41,24 +42,28 @@ def get_pyenv_pythons(
         executable = os.path.join(p.path, "python.exe")
 
         if os.path.exists(executable):
-            match p.name.split("-"):
-                case (version, arch):
-                    # win32 in pyenv name means 32 bit python install
-                    # 'arm' is the only alternative which will be 64bit
-                    arch = "32bit" if arch == "win32" else "64bit"
-                    try:
-                        yield PythonInstall.from_str(
-                            version, executable, architecture=arch
-                        )
-                    except ValueError:
-                        pass
-                case (version,):
-                    # If no arch given pyenv will be 64 bit
-                    try:
-                        yield PythonInstall.from_str(
-                            version, executable, architecture="64bit"
-                        )
-                    except ValueError:
-                        pass
-                case _:
-                    pass  # Skip unrecognised versions
+            split_version = p.name.split("-")
+
+            # If there are 1 or 2 arguments this is a recognised version
+            # Otherwise it is unrecognised
+            if len(split_version) == 2:
+                version, arch = split_version
+
+                # win32 in pyenv name means 32 bit python install
+                # 'arm' is the only alternative which will be 64bit
+                arch = "32bit" if arch == "win32" else "64bit"
+                try:
+                    yield PythonInstall.from_str(
+                        version, executable, architecture=arch
+                    )
+                except ValueError:
+                    pass
+            elif len(split_version) == 1:
+                version = split_version[0]
+                try:
+                    yield PythonInstall.from_str(
+                        version, executable, architecture="64bit"
+                    )
+                except ValueError:
+                    pass
+
