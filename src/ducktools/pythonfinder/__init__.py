@@ -23,8 +23,6 @@
 
 # Find platform python versions
 
-__version__ = "v0.2.0"
-
 __all__ = [
     "get_python_installs",
     "list_python_installs",
@@ -32,6 +30,7 @@ __all__ = [
 ]
 
 import sys
+from ._version import __version__
 from .shared import PythonInstall
 
 
