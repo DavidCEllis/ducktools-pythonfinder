@@ -2,7 +2,7 @@
 
 Find python installs on Linux, Windows and MacOS.
 
-Requires Python >= 3.10 (but will discover older Python installs)
+Requires Python >= 3.8 (but will discover older Python installs)
 
 ## Quick usage ##
 
