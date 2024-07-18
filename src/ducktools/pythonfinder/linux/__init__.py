@@ -49,10 +49,9 @@ def get_path_pythons() -> Iterator[PythonInstall]:
             name = os.path.basename(install.executable)
             if name in exe_names:
                 install.shadowed = True
-                yield install
-            if name not in exe_names:
-                yield install
+            else:
                 exe_names.add(name)
+            yield install
 
 
 def get_python_installs():
