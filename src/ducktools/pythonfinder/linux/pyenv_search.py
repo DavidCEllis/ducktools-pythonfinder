@@ -34,13 +34,10 @@ from _collections_abc import Iterator
 from ducktools.lazyimporter import LazyImporter, ModuleImport
 
 from ..shared import PythonInstall, get_install_details
-from .. import details_script
 
 _laz = LazyImporter(
     [
         ModuleImport("re"),
-        ModuleImport("subprocess"),
-        ModuleImport("json"),
     ]
 )
 
