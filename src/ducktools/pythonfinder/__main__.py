@@ -66,7 +66,7 @@ def stop_autoclose():
                 break
 
     if autoclosing:
-        _laz.subprocess.run("break", shell=True)
+        _laz.subprocess.run("pause", shell=True)
 
 
 def parse_args(args):
