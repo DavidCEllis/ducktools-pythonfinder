@@ -33,7 +33,7 @@ from _collections_abc import Iterator
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport
 
-from ..shared import PythonInstall
+from ..shared import PythonInstall, get_install_details
 from .. import details_script
 
 _laz = LazyImporter(
@@ -74,16 +74,5 @@ def get_pyenv_pythons(
             if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
                 yield PythonInstall.from_str(p.name, executable)
             elif _laz.re.fullmatch(PYPY_VER_RE, p.name):
-                details_output = _laz.subprocess.run(
-                    [executable, details_script.__file__],
-                    capture_output=True,
-                    text=True,
-                ).stdout
-
-                if details_output:
-                    try:
-                        details = _laz.json.loads(details_output)
-                    except _laz.json.JSONDecodeError:
-                        pass
-                    else:
-                        yield PythonInstall.from_json(**details)
+                if install := get_install_details(executable):
+                    yield install

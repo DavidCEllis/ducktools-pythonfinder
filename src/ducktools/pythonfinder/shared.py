@@ -38,6 +38,7 @@ _laz = LazyImporter(
         ModuleImport("platform"),
         FromImport("glob", "glob"),
         ModuleImport("json"),
+        ModuleImport("zipfile"),
     ]
 )
 
@@ -161,14 +162,36 @@ def _python_exe_regex(basename: str = "python"):
 
 
 def get_install_details(executable: str) -> PythonInstall | None:
-    try:
-        detail_output = _laz.subprocess.run(
-            [executable, details_script.__file__],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout
-    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+    if os.path.exists(details_script.__file__):
+        try:
+            detail_output = _laz.subprocess.run(
+                [executable, details_script.__file__],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+
+        except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+            return None
+
+    elif os.path.splitext((archive_path := sys.argv[0]))[1].startswith(".pyz"):
+        # todo: cache the text of the script file
+        # Inside a zipapp - read the source code and run it as stdin
+        script_path = os.path.relpath(details_script.__file__, archive_path)
+        script = _laz.zipfile.Path(archive_path, script_path)
+        script_txt = script.read_text()
+
+        try:
+            detail_output = _laz.subprocess.run(
+                [executable, "-"],
+                input=script_txt,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+        except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+            return None
+    else:
         return None
 
     try:
