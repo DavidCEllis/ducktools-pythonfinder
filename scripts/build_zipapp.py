@@ -40,8 +40,8 @@ main_func = "ducktools.pythonfinder.__main__:main"
 shutil.rmtree(build_path, ignore_errors=True)
 dist_path.unlink(missing_ok=True)
 
-build_path.mkdir()
-dist_path.parent.mkdir(exist_ok=True)
+build_path.mkdir(parents=True)
+dist_path.parent.mkdir(parents=True, exist_ok=True)
 
 
 # Download
