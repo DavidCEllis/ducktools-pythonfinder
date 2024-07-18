@@ -53,12 +53,14 @@ class PythonInstall:
         architecture="64bit",
         implementation="cpython",
         metadata=Field(default_factory=dict),
+        shadowed=False,
     )
     version: tuple[int, int, int, str, int]
     executable: str
     architecture: str
     implementation: str
     metadata: dict
+    shadowed: bool
 
     @property
     def version_str(self) -> str:

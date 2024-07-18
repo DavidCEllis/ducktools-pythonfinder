@@ -23,11 +23,50 @@
 
 
 import sys
+import os
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport
 from ducktools.pythonfinder import list_python_installs
 
-_laz = LazyImporter([ModuleImport("argparse")])
+_laz = LazyImporter(
+    [
+        ModuleImport("argparse"),
+        ModuleImport("csv"),
+        ModuleImport("subprocess"),
+
+    ]
+)
+
+
+class UnsupportedPythonError(Exception):
+    pass
+
+
+def stop_autoclose():
+    """
+    Checks if it thinks windows will auto close the window after running
+
+    The logic here is it checks if the PID of this task is running as py.exe
+
+    By default py.exe is set as the runner for double-clicked .pyz files on
+    windows.
+    """
+    autoclosing = False
+
+    if sys.platform == "win32":
+        exe_name = "py.exe"
+        tasklist = _laz.subprocess.check_output(
+            ["tasklist", "/v", "/fo", "csv", "/fi", f"PID eq {os.getppid()}"],
+            text=True
+        )
+        data = _laz.csv.DictReader(tasklist.split("\n"))
+        for entry in data:
+            if entry["Image Name"] == exe_name:
+                autoclosing = True
+                break
+
+    if autoclosing:
+        _laz.subprocess.run("break", shell=True)
 
 
 def parse_args(args):
@@ -60,6 +99,13 @@ def parse_args(args):
 
 
 def main():
+    if sys.version_info < (3, 8):
+        v = sys.version_info
+        raise UnsupportedPythonError(
+            f"Python {v.major}.{v.minor}.{v.micro} is not supported. "
+            f"ducktools.pythonfinder requires Python 3.8 or later."
+        )
+
     if sys.argv[1:]:
         min_ver, max_ver, exact = parse_args(sys.argv[1:])
     else:
@@ -75,10 +121,10 @@ def main():
     print("Discoverable Python Installs")
     if sys.platform == "win32":
         print("+ - Listed in the Windows Registry ")
+    if sys.platform != "win32":
+        print("[] - This python install is shadowed by another on Path")
     print("* - This is the active python executable used to call this module")
-    print(
-        "** - This is the parent python executable of the venv used to call this module"
-    )
+    print("** - This is the parent python executable of the venv used to call this module")
     print()
     print(headings_str)
     print(f"| {'-' * len(headings[0])} | {'-' * max_executable_len} |")
@@ -97,6 +143,9 @@ def main():
                 continue
 
         version_str = install.version_str
+        if install.shadowed:
+            version_str = f"[{version_str}]"
+
         if install.executable == sys.executable:
             version_str = f"*{version_str}"
         elif sys.prefix != sys.base_prefix and install.executable.startswith(
@@ -109,5 +158,9 @@ def main():
 
         print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
 
+    stop_autoclose()
 
-main()
+
+
+if __name__ == "__main__":
+    main()
