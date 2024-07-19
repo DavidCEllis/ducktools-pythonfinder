@@ -47,6 +47,36 @@ FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselev
 
 
 @slotclass
+class DetailsScript:
+    """
+    Class to obtain and cache the source code of details_script.py
+    to use on external Pythons.
+    """
+    __slots__ = SlotFields(
+        _source_code=Field(default=None)
+    )
+
+    _source_code: str | None
+
+    def get_source_code(self):
+        if self._source_code is None:
+            if os.path.exists(details_file := details_script.__file__):
+                with open(details_file) as f:
+                    self._source_code = f.read()
+            elif os.path.splitext(archive_path := sys.argv[0])[1].startswith(".pyz"):
+                script_path = os.path.relpath(details_script.__file__, archive_path)
+                script = _laz.zipfile.Path(archive_path, script_path)
+                self._source_code = script.read_text()
+            else:
+                raise FileNotFoundError(f"Could not find {details_script.__file__!r}")
+
+        return self._source_code
+
+
+details = DetailsScript()
+
+
+@slotclass
 class PythonInstall:
     __slots__ = SlotFields(
         version=Field(),
@@ -162,36 +192,20 @@ def _python_exe_regex(basename: str = "python"):
 
 
 def get_install_details(executable: str) -> PythonInstall | None:
-    if os.path.exists(details_script.__file__):
-        try:
-            detail_output = _laz.subprocess.run(
-                [executable, details_script.__file__],
-                capture_output=True,
-                text=True,
-                check=True,
-            ).stdout
+    try:
+        source = details.get_source_code()
+    except FileNotFoundError:
+        return None
 
-        except (_laz.subprocess.CalledProcessError, FileNotFoundError):
-            return None
-
-    elif os.path.splitext((archive_path := sys.argv[0]))[1].startswith(".pyz"):
-        # todo: cache the text of the script file
-        # Inside a zipapp - read the source code and run it as stdin
-        script_path = os.path.relpath(details_script.__file__, archive_path)
-        script = _laz.zipfile.Path(archive_path, script_path)
-        script_txt = script.read_text()
-
-        try:
-            detail_output = _laz.subprocess.run(
-                [executable, "-"],
-                input=script_txt,
-                capture_output=True,
-                text=True,
-                check=True,
-            ).stdout
-        except (_laz.subprocess.CalledProcessError, FileNotFoundError):
-            return None
-    else:
+    try:
+        detail_output = _laz.subprocess.run(
+            [executable, "-"],
+            input=source,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
         return None
 
     try:
