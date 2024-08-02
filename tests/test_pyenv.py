@@ -25,6 +25,7 @@ import sys
 import os
 import os.path
 import textwrap
+from pathlib import Path
 
 import pytest
 from unittest.mock import patch, Mock
@@ -42,6 +43,9 @@ else:
         get_pyenv_pythons,
         PYENV_VERSIONS_FOLDER,
     )
+
+
+details_text = Path(details_script.__file__).read_text()
 
 
 def test_no_versions_folder():
@@ -213,7 +217,8 @@ def test_pypy_version(fs):
         versions = list(get_pyenv_pythons(tmpdir))
 
         run_cmd.assert_called_once_with(
-            [py_exe, details_script.__file__],
+            [py_exe, "-"],
+            input=details_text,
             capture_output=True,
             text=True,
         )
