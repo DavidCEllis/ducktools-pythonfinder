@@ -1,0 +1,5 @@
+name: Build pythonfinder.pyz zipapp
+
+on:
+  release:
+    types: [published]

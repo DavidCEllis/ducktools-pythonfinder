@@ -38,11 +38,42 @@ _laz = LazyImporter(
         ModuleImport("platform"),
         FromImport("glob", "glob"),
         ModuleImport("json"),
+        ModuleImport("zipfile"),
     ]
 )
 
 
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+
+
+@slotclass
+class DetailsScript:
+    """
+    Class to obtain and cache the source code of details_script.py
+    to use on external Pythons.
+    """
+    __slots__ = SlotFields(
+        _source_code=Field(default=None)
+    )
+
+    _source_code: str | None
+
+    def get_source_code(self):
+        if self._source_code is None:
+            if os.path.exists(details_file := details_script.__file__):
+                with open(details_file) as f:
+                    self._source_code = f.read()
+            elif os.path.splitext(archive_path := sys.argv[0])[1].startswith(".pyz"):
+                script_path = os.path.relpath(details_script.__file__, archive_path)
+                script = _laz.zipfile.Path(archive_path, script_path)
+                self._source_code = script.read_text()
+            else:
+                raise FileNotFoundError(f"Could not find {details_script.__file__!r}")
+
+        return self._source_code
+
+
+details = DetailsScript()
 
 
 @slotclass
@@ -53,12 +84,14 @@ class PythonInstall:
         architecture="64bit",
         implementation="cpython",
         metadata=Field(default_factory=dict),
+        shadowed=False,
     )
     version: tuple[int, int, int, str, int]
     executable: str
     architecture: str
     implementation: str
     metadata: dict
+    shadowed: bool
 
     @property
     def version_str(self) -> str:
@@ -160,8 +193,14 @@ def _python_exe_regex(basename: str = "python"):
 
 def get_install_details(executable: str) -> PythonInstall | None:
     try:
+        source = details.get_source_code()
+    except FileNotFoundError:
+        return None
+
+    try:
         detail_output = _laz.subprocess.run(
-            [executable, details_script.__file__],
+            [executable, "-"],
+            input=source,
             capture_output=True,
             text=True,
             check=True,

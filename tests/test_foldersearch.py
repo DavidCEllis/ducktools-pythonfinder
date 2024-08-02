@@ -25,6 +25,7 @@ import os.path
 from unittest.mock import patch, MagicMock, call
 import textwrap
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -55,6 +56,8 @@ fake_details = textwrap.dedent(
 """
 )
 
+details_text = Path(details_script.__file__).read_text()
+
 
 @pytest.mark.parametrize(
     "output, expected", [(fake_details, fake_details_out), ("InvalidJSON", None)]
@@ -69,7 +72,8 @@ def test_get_install_details(output, expected):
         details = get_install_details(fake_details_out.executable)
 
         run_mock.assert_called_with(
-            [fake_details_out.executable, details_script.__file__],
+            [fake_details_out.executable, "-"],
+            input=details_text,
             capture_output=True,
             text=True,
             check=True,
@@ -86,7 +90,8 @@ def test_get_install_details_error():
         details = get_install_details(fake_details_out.executable)
 
         run_mock.assert_called_with(
-            [fake_details_out.executable, details_script.__file__],
+            [fake_details_out.executable, "-"],
+            input=details_text,
             capture_output=True,
             text=True,
             check=True,
