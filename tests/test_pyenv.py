@@ -221,6 +221,7 @@ def test_pypy_version(fs):
             input=details_text,
             capture_output=True,
             text=True,
+            check=True,
         )
 
         out_version = PythonInstall(
