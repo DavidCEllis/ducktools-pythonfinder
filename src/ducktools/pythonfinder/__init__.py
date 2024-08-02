@@ -43,4 +43,8 @@ else:
 
 
 def list_python_installs():
-    return sorted(get_python_installs(), reverse=True, key=lambda x: x.version)
+    return sorted(
+        get_python_installs(),
+        reverse=True,
+        key=lambda x: (x.version[3], *x.version[:3], x.version[4])
+    )
