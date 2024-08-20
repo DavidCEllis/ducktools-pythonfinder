@@ -49,32 +49,42 @@ class UnsupportedError(Exception):
     pass
 
 
-def get_binary_tags() -> list[str]:
-    uname = platform.uname()
-    if uname.system != "Windows":
-        raise UnsupportedError(
-            f"ducktools.pythonfinder does not support searching for binary installers on {uname.system!r}"
-        )
+def get_download_tags(system=None, machine=None) -> list[str]:
+    system = platform.system() if system is None else system
+    machine = platform.machine() if machine is None else machine
 
-    machine_tags = {
-        "AMD64": "amd64",
-        "ARM64": "arm64",
-        "x86": ""
-    }
+    if system == "Windows":
+        machine_tags = {
+            "AMD64": "amd64",
+            "ARM64": "arm64",
+            "x86": ""
+        }
 
-    installer_extensions = [
-        "-{machine_tag}.exe",
-        ".{machine_tag}.msi",
-    ]
+        # I don't believe there are any python versions with both of these, but prefer .exe
+        installer_extensions = [
+            "-{machine_tag}.exe",
+            ".{machine_tag}.msi",
+        ]
 
-    try:
-        machine_tag = machine_tags[uname.machine]
-    except KeyError:
-        raise UnsupportedError(
-            f"python.org does not provide binary installers for {uname.system!r} on {uname.machine!r}"
-        )
+        try:
+            machine_tag = machine_tags[machine]
+        except KeyError:
+            raise UnsupportedError(
+                f"python.org does not provide installers for {system!r} on {machine!r}"
+            )
 
-    return [item.format(machine_tag=machine_tag) for item in installer_extensions]
+        tags = [item.format(machine_tag=machine_tag) for item in installer_extensions]
+    elif system == "Darwin":
+        # MacOS Installers - prefer universal2 installers
+        tags = ["-macos11.pkg"]
+        # Intel installers for older versions if the new version is not found
+        if machine.lower() == "x86_64":
+            tags.append("-macosx10.9.pkg")
+    else:
+        # No binaries available
+        tags = [".tar.xz", ".tar.bz2", ".tgz"]
+
+    return tags
 
 
 # This code will move to shared
@@ -181,6 +191,9 @@ class PythonOrgSearch(Prefab):
     release_page_cache: str | None = None
     release_file_page_cache: str | None = None
 
+    system: str = platform.system()
+    machine: str = platform.machine()
+
     _releases: list[PythonRelease] | None = attribute(default=None, private=True)
     _release_files: list[PythonReleaseFile] | None = attribute(default=None, private=True)
 
@@ -247,26 +260,26 @@ class PythonOrgSearch(Prefab):
         return matching_downloads
 
     def all_matching_binaries(self, specifier: SpecifierSet, prereleases=False) -> list[PythonDownload]:
-        tags = get_binary_tags()
+        tags = get_download_tags(system=self.system, machine=self.machine)
         latest_binaries = []
 
-        for download in self.matching_downloads(specifier, prereleases):
-            for tag in tags:
+        for tag in tags:
+            for download in self.matching_downloads(specifier, prereleases):
                 if download.url.endswith(tag):
                     latest_binaries.append(download)
 
         return latest_binaries
 
     def latest_minor_binaries(self, specifier: SpecifierSet, prereleases=False) -> list[PythonDownload]:
-        tags = get_binary_tags()
+        tags = get_download_tags(system=self.system, machine=self.machine)
         latest_binaries = []
         versions_included = set()
 
-        for download in self.matching_downloads(specifier, prereleases):
-            if download.version_tuple[:2] in versions_included:
-                continue
+        for tag in tags:
+            for download in self.matching_downloads(specifier, prereleases):
+                if download.version_tuple[:2] in versions_included:
+                    continue
 
-            for tag in tags:
                 if download.url.endswith(tag):
                     versions_included.add(download.version_tuple[:2])
                     latest_binaries.append(download)
@@ -274,8 +287,8 @@ class PythonOrgSearch(Prefab):
         return latest_binaries
 
     def latest_binary_match(self, specifier: SpecifierSet, prereleases=False) -> PythonDownload:
-        tags = get_binary_tags()
-        for download in self.matching_downloads(specifier, prereleases):
-            for tag in tags:
+        tags = get_download_tags(system=self.system, machine=self.machine)
+        for tag in tags:
+            for download in self.matching_downloads(specifier, prereleases):
                 if download.url.endswith(tag):
                     return download

@@ -33,6 +33,7 @@ _laz = LazyImporter(
         ModuleImport("argparse"),
         ModuleImport("csv"),
         ModuleImport("subprocess"),
+        ModuleImport("platform"),
         FromImport(".pythonorg_search", "PythonOrgSearch"),
         FromImport("packaging.specifiers", "SpecifierSet"),
         FromImport("urllib.error", "URLError"),
@@ -91,13 +92,23 @@ def parse_args(args):
         help="Provide *all* matching binaries and "
              "not just the latest minor versions (Online only)"
     )
+    parser.add_argument(
+        "--system",
+        action="store",
+        help="Get python installers for a different system (Windows, Darwin, Linux)"
+    )
+    parser.add_argument(
+        "--machine",
+        action="store",
+        help="Get python installers for a different architecture (Windows: AMD64, ARM64, x86)"
+    )
 
     vals = parser.parse_args(args)
 
-    return vals.min, vals.max, vals.compatible, vals.online, vals.all_binaries
+    return vals
 
 
-def display_local_installs(min_ver, max_ver, compatible):
+def display_local_installs(min_ver=None, max_ver=None, compatible=None):
     if min_ver:
         min_ver = tuple(int(i) for i in min_ver.split("."))
     if max_ver:
@@ -153,7 +164,7 @@ def display_local_installs(min_ver, max_ver, compatible):
         print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
 
 
-def display_remote_binaries(min_ver, max_ver, compatible, all_binaries):
+def display_remote_binaries(min_ver, max_ver, compatible, all_binaries, system, machine):
     specs = []
     if min_ver:
         specs.append(f">={min_ver}")
@@ -164,7 +175,7 @@ def display_remote_binaries(min_ver, max_ver, compatible, all_binaries):
 
     spec = _laz.SpecifierSet(",".join(specs))
 
-    searcher = _laz.PythonOrgSearch()
+    searcher = _laz.PythonOrgSearch(system=system, machine=machine)
     if all_binaries:
         releases = searcher.all_matching_binaries(spec)
     else:
@@ -192,17 +203,28 @@ def main():
         )
 
     if sys.argv[1:]:
-        min_ver, max_ver, compatible, online, all_binaries = parse_args(sys.argv[1:])
-    else:
-        min_ver, max_ver, compatible, online, all_binaries = None, None, None, False, False
+        vals = parse_args(sys.argv[1:])
+        online = vals.online
 
-    if online:
-        try:
-            display_remote_binaries(min_ver, max_ver, compatible, all_binaries)
-        except _laz.URLError:
-            print("Could not connect to python.org")
+        if online:
+            system = vals.system if vals.system else _laz.platform.system()
+            machine = vals.machine if vals.machine else _laz.platform.machine()
+            try:
+                display_remote_binaries(
+                    vals.min,
+                    vals.max,
+                    vals.compatible,
+                    vals.all_binaries,
+                    system,
+                    machine,
+                )
+            except _laz.URLError:
+                print("Could not connect to python.org")
+        else:
+            display_local_installs(vals.min, vals.max, vals.compatible)
     else:
-        display_local_installs(min_ver, max_ver, compatible)
+        # No arguments to parse
+        display_local_installs()
 
     stop_autoclose()
 
