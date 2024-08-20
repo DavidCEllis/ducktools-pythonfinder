@@ -32,15 +32,12 @@ from __future__ import annotations
 import json
 import platform
 
-from collections import defaultdict
-from collections.abc import Iterable
 from urllib.request import urlopen
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from ducktools.classbuilder.prefab import Prefab, attribute
-
+from ducktools.classbuilder.prefab import Prefab, attribute, get_attributes
 from ducktools.pythonfinder.shared import version_str_to_tuple
 
 
@@ -116,6 +113,16 @@ class PythonRelease(Prefab):
     def is_prerelease(self):
         return self.version_spec.is_prerelease
 
+    @classmethod
+    def from_dict(cls, dict_data: dict):
+        # Filter out any extra keys
+        init_attribs = {k for k, v in get_attributes(cls).items() if v.init}
+        key_dict = {
+            k: v for k, v in dict_data.items()
+            if k in init_attribs
+        }
+        return cls(**key_dict)
+
 
 class PythonReleaseFile(Prefab):
     name: str
@@ -135,12 +142,24 @@ class PythonReleaseFile(Prefab):
     sigstore_bundle_file: str
     sbom_spdx2_file: str
 
+    @classmethod
+    def from_dict(cls, dict_data: dict):
+        # Filter out any extra keys
+        init_attribs = {k for k, v in get_attributes(cls).items() if v.init}
+        key_dict = {
+            k: v for k, v in dict_data.items()
+            if k in init_attribs
+        }
+        return cls(**key_dict)
 
-class PythonDownloads(Prefab):
+
+class PythonDownload(Prefab):
     name: str
     version: str
-    downloads: list[str]
+    url: str
+    md5_sum: str  # Python.org only provides md5 hash
     _version_tuple: tuple | None = attribute(default=None, private=True)
+    _version_spec: Version | None = attribute(default=None, private=True)
 
     @property
     def version_tuple(self):
@@ -148,19 +167,33 @@ class PythonDownloads(Prefab):
             self._version_tuple = version_str_to_tuple(self.version)
         return self._version_tuple
 
+    @property
+    def version_spec(self):
+        if self._version_spec is None:
+            self._version_spec = Version(self.version)
+        return self._version_spec
+
 
 class PythonOrgSearch(Prefab):
     release_page: str = RELEASE_PAGE
     release_file_page: str = RELEASE_FILE_PAGE
+
+    release_page_cache: str | None = None
+    release_file_page_cache: str | None = None
+
     _releases: list[PythonRelease] | None = attribute(default=None, private=True)
     _release_files: list[PythonReleaseFile] | None = attribute(default=None, private=True)
 
     @property
     def releases(self) -> list[PythonRelease]:
         if self._releases is None:
-            with urlopen(self.release_page) as req:
-                data = json.load(req)
-            self._releases = [PythonRelease(**release) for release in data]
+            if self.release_page_cache:
+                data = json.loads(self.release_page_cache)
+            else:
+                with urlopen(self.release_page) as req:
+                    data = json.load(req)
+
+            self._releases = [PythonRelease.from_dict(release) for release in data]
             self._releases.sort(key=lambda ver: ver.version_tuple, reverse=True)
 
         return self._releases
@@ -168,9 +201,13 @@ class PythonOrgSearch(Prefab):
     @property
     def release_files(self) -> list[PythonReleaseFile]:
         if self._release_files is None:
-            with urlopen(self.release_file_page) as req:
-                data = json.load(req)
-            self._release_files = [PythonReleaseFile(**relfile) for relfile in data]
+            if self.release_file_page_cache:
+                data = json.loads(self.release_file_page_cache)
+            else:
+                with urlopen(self.release_file_page) as req:
+                    data = json.load(req)
+
+            self._release_files = [PythonReleaseFile.from_dict(relfile) for relfile in data]
         return self._release_files
 
     def matching_versions(self, specifier: SpecifierSet, prereleases=False) -> list[PythonRelease]:
@@ -180,40 +217,65 @@ class PythonOrgSearch(Prefab):
             if specifier.contains(release.version_spec, prereleases=prereleases)
         ]
 
-    def matching_release_files(self, releases: list[PythonRelease]) -> dict[str, list[PythonReleaseFile]]:
-        matches = defaultdict(list)
-        release_uris = {rel.resource_uri for rel in releases}
+    def matching_downloads(
+        self,
+        specifier: SpecifierSet,
+        prereleases: bool = False
+    ) -> list[PythonDownload]:
+
+        matching_downloads = []
+        releases = self.matching_versions(specifier, prereleases)
+
+        release_uri_map = {
+            rel.resource_uri: rel
+            for rel in releases
+        }
 
         for release_file in self.release_files:
-            if release_file.release in release_uris:
-                matches[release_file.release].append(release_file)
+            if release_file.release in release_uri_map.keys():
+                rel = release_uri_map[release_file.release]
+                matching_downloads.append(
+                    PythonDownload(
+                        name=rel.name,
+                        version=rel.version_str,
+                        url=release_file.url,
+                        md5_sum=release_file.md5_sum,
+                    )
+                )
 
-        return dict(matches)
+        matching_downloads.sort(key=lambda dl: dl.version_spec, reverse=True)
+        return matching_downloads
 
-    def matching_downloads(self, specifier: SpecifierSet, prereleases=False) -> Iterable[PythonDownloads]:
-        releases = self.matching_versions(specifier, prereleases=prereleases)
-        files = self.matching_release_files(releases)
-
-        yield from (
-            PythonDownloads(
-                name=rel.name,
-                version=rel.version_str,
-                downloads=[f.url for f in files[rel.resource_uri]]
-            )
-            for rel in releases
-            if rel.resource_uri in files
-        )
-
-    def latest_binary_match(self, specifier: SpecifierSet, prereleases=False) -> str | None:
+    def all_matching_binaries(self, specifier: SpecifierSet, prereleases=False) -> list[PythonDownload]:
         tags = get_binary_tags()
-        for version in self.matching_downloads(specifier, prereleases):
-            for f in version.downloads:
-                for tag in tags:
-                    if f.endswith(tag):
-                        return f
+        latest_binaries = []
 
+        for download in self.matching_downloads(specifier, prereleases):
+            for tag in tags:
+                if download.url.endswith(tag):
+                    latest_binaries.append(download)
 
-if __name__ == "__main__":
-    searcher = PythonOrgSearch()
-    print(searcher.latest_binary_match(SpecifierSet(">=3.2.0"), prereleases=True))
+        return latest_binaries
 
+    def latest_minor_binaries(self, specifier: SpecifierSet, prereleases=False) -> list[PythonDownload]:
+        tags = get_binary_tags()
+        latest_binaries = []
+        versions_included = set()
+
+        for download in self.matching_downloads(specifier, prereleases):
+            if download.version_tuple[:2] in versions_included:
+                continue
+
+            for tag in tags:
+                if download.url.endswith(tag):
+                    versions_included.add(download.version_tuple[:2])
+                    latest_binaries.append(download)
+
+        return latest_binaries
+
+    def latest_binary_match(self, specifier: SpecifierSet, prereleases=False) -> PythonDownload:
+        tags = get_binary_tags()
+        for download in self.matching_downloads(specifier, prereleases):
+            for tag in tags:
+                if download.url.endswith(tag):
+                    return download

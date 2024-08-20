@@ -25,7 +25,7 @@
 import sys
 import os
 
-from ducktools.lazyimporter import LazyImporter, ModuleImport
+from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 from ducktools.pythonfinder import list_python_installs
 
 _laz = LazyImporter(
@@ -33,8 +33,11 @@ _laz = LazyImporter(
         ModuleImport("argparse"),
         ModuleImport("csv"),
         ModuleImport("subprocess"),
-
-    ]
+        FromImport(".pythonorg_search", "PythonOrgSearch"),
+        FromImport("packaging.specifiers", "SpecifierSet"),
+        FromImport("urllib.error", "URLError"),
+    ],
+    globs=globals()
 )
 
 
@@ -76,40 +79,31 @@ def parse_args(args):
     )
     parser.add_argument("--min", help="Specify minimum Python version")
     parser.add_argument("--max", help="Specify maximum Python version")
-    parser.add_argument("--exact", help="Specify exact Python version")
+    parser.add_argument("--compatible", help="Specify compatible Python version")
+    parser.add_argument(
+        "--online",
+        action="store_true",
+        help="Get links to binaries from python.org (Windows only)"
+    )
+    parser.add_argument(
+        "--all-binaries",
+        action="store_true",
+        help="Provide *all* matching binaries and "
+             "not just the latest minor versions (Online only)"
+    )
 
     vals = parser.parse_args(args)
 
-    if vals.min:
-        min_ver = tuple(int(i) for i in vals.min.split("."))
-    else:
-        min_ver = None
-
-    if vals.max:
-        max_ver = tuple(int(i) for i in vals.max.split("."))
-    else:
-        max_ver = None
-
-    if vals.exact:
-        exact = tuple(int(i) for i in vals.exact.split("."))
-    else:
-        exact = None
-
-    return min_ver, max_ver, exact
+    return vals.min, vals.max, vals.compatible, vals.online, vals.all_binaries
 
 
-def main():
-    if sys.version_info < (3, 8):
-        v = sys.version_info
-        raise UnsupportedPythonError(
-            f"Python {v.major}.{v.minor}.{v.micro} is not supported. "
-            f"ducktools.pythonfinder requires Python 3.8 or later."
-        )
-
-    if sys.argv[1:]:
-        min_ver, max_ver, exact = parse_args(sys.argv[1:])
-    else:
-        min_ver, max_ver, exact = None, None, None
+def display_local_installs(min_ver, max_ver, compatible):
+    if min_ver:
+        min_ver = tuple(int(i) for i in min_ver.split("."))
+    if max_ver:
+        max_ver = tuple(int(i) for i in max_ver.split("."))
+    if compatible:
+        compatible = tuple(int(i) for i in compatible.split("."))
 
     installs = list_python_installs()
     headings = ["Python Version", "Executable Location"]
@@ -133,9 +127,9 @@ def main():
             continue
         elif max_ver and install.version > max_ver:
             continue
-        elif exact:
+        elif compatible:
             mismatch = False
-            for i, val in enumerate(exact):
+            for i, val in enumerate(compatible):
                 if val != install.version[i]:
                     mismatch = True
                     break
@@ -149,7 +143,7 @@ def main():
         if install.executable == sys.executable:
             version_str = f"*{version_str}"
         elif sys.prefix != sys.base_prefix and install.executable.startswith(
-            sys.base_prefix
+                sys.base_prefix
         ):
             version_str = f"**{version_str}"
 
@@ -158,8 +152,59 @@ def main():
 
         print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
 
-    stop_autoclose()
 
+def display_remote_binaries(min_ver, max_ver, compatible, all_binaries):
+    specs = []
+    if min_ver:
+        specs.append(f">={min_ver}")
+    if max_ver:
+        specs.append(f"<{max_ver}")
+    if compatible:
+        specs.append(f"~={compatible}")
+
+    spec = _laz.SpecifierSet(",".join(specs))
+
+    searcher = _laz.PythonOrgSearch()
+    if all_binaries:
+        releases = searcher.all_matching_binaries(spec)
+    else:
+        releases = searcher.latest_minor_binaries(spec)
+
+    headings = ["Python Version", "URL"]
+    max_url_len = max(
+        len(headings[1]), max(len(release.url) for release in releases)
+    )
+    headings_str = f"| {headings[0]} | {headings[1]:<{max_url_len}s} |"
+
+    print(headings_str)
+    print(f"| {'-' * len(headings[0])} | {'-' * max_url_len} |")
+
+    for release in releases:
+        print(f"| {release.version:>14s} | {release.url:<{max_url_len}s} |")
+
+
+def main():
+    if sys.version_info < (3, 8):
+        v = sys.version_info
+        raise UnsupportedPythonError(
+            f"Python {v.major}.{v.minor}.{v.micro} is not supported. "
+            f"ducktools.pythonfinder requires Python 3.8 or later."
+        )
+
+    if sys.argv[1:]:
+        min_ver, max_ver, compatible, online, all_binaries = parse_args(sys.argv[1:])
+    else:
+        min_ver, max_ver, compatible, online, all_binaries = None, None, None, False, False
+
+    if online:
+        try:
+            display_remote_binaries(min_ver, max_ver, compatible, all_binaries)
+        except _laz.URLError:
+            print("Could not connect to python.org")
+    else:
+        display_local_installs(min_ver, max_ver, compatible)
+
+    stop_autoclose()
 
 
 if __name__ == "__main__":
