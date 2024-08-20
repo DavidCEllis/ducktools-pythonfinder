@@ -46,6 +46,53 @@ _laz = LazyImporter(
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
 
 
+def version_str_to_tuple(version):
+    parsed_version = _laz.re.fullmatch(FULL_PY_VER_RE, version)
+
+    if not parsed_version:
+        raise ValueError(f"{version!r} is not a recognised Python version string.")
+
+    major, minor, micro, releaselevel, serial = parsed_version.groups()
+
+    if releaselevel == "a":
+        releaselevel = "alpha"
+    elif releaselevel == "b":
+        releaselevel = "beta"
+    elif releaselevel == "rc":
+        releaselevel = "candidate"
+    else:
+        releaselevel = "final"
+
+    version_tuple = (
+        int(major),
+        int(minor),
+        int(micro) if micro else 0,
+        releaselevel,
+        int(serial if serial != "" else 0),
+    )
+    return version_tuple
+
+
+def version_tuple_to_str(version_tuple):
+    major, minor, micro, releaselevel, serial = version_tuple
+
+    if releaselevel == "alpha":
+        releaselevel = "a"
+    elif releaselevel == "beta":
+        releaselevel = "b"
+    elif releaselevel == "candidate":
+        releaselevel = "rc"
+    else:
+        releaselevel = ""
+
+    if serial == 0:
+        serial = ""
+    else:
+        serial = f"{serial}"
+
+    return f"{major}.{minor}.{micro}{releaselevel}{serial}"
+
+
 @slotclass
 class DetailsScript:
     """
@@ -95,23 +142,7 @@ class PythonInstall:
 
     @property
     def version_str(self) -> str:
-        major, minor, micro, releaselevel, serial = self.version
-
-        if releaselevel == "alpha":
-            releaselevel = "a"
-        elif releaselevel == "beta":
-            releaselevel = "b"
-        elif releaselevel == "candidate":
-            releaselevel = "rc"
-        else:
-            releaselevel = ""
-
-        if serial == 0:
-            serial = ""
-        else:
-            serial = f"{serial}"
-
-        return f"{major}.{minor}.{micro}{releaselevel}{serial}"
+        return version_tuple_to_str(self.version)
 
     @classmethod
     def from_str(
@@ -122,29 +153,7 @@ class PythonInstall:
         implementation: str = "cpython",
         metadata: dict | None = None,
     ):
-        parsed_version = _laz.re.fullmatch(FULL_PY_VER_RE, version)
-
-        if not parsed_version:
-            raise ValueError(f"{version!r} is not a recognised Python version string.")
-
-        major, minor, micro, releaselevel, serial = parsed_version.groups()
-
-        if releaselevel == "a":
-            releaselevel = "alpha"
-        elif releaselevel == "b":
-            releaselevel = "beta"
-        elif releaselevel == "rc":
-            releaselevel = "candidate"
-        else:
-            releaselevel = "final"
-
-        version_tuple = (
-            int(major),
-            int(minor),
-            int(micro) if micro else 0,
-            releaselevel,
-            int(serial if serial != "" else 0),
-        )
+        version_tuple = version_str_to_tuple(version)
 
         # noinspection PyArgumentList
         return cls(
