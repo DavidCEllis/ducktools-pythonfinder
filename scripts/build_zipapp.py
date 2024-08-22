@@ -46,7 +46,7 @@ dist_path.parent.mkdir(parents=True, exist_ok=True)
 
 # Download
 subprocess.run(
-    [sys.executable, "-m", "pip", "install", str(project_path), "--target", str(build_path)]
+    [sys.executable, "-m", "pip", "install", "--no-compile", str(project_path), "--target", str(build_path)]
 )
 
 zipapp.create_archive(
