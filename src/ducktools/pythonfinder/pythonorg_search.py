@@ -263,8 +263,8 @@ class PythonOrgSearch(Prefab):
         tags = get_download_tags(system=self.system, machine=self.machine)
         latest_binaries = []
 
-        for tag in tags:
-            for download in self.matching_downloads(specifier, prereleases):
+        for download in self.matching_downloads(specifier, prereleases):
+            for tag in tags:
                 if download.url.endswith(tag):
                     latest_binaries.append(download)
 
