@@ -95,12 +95,18 @@ def parse_args(args):
     parser.add_argument(
         "--system",
         action="store",
-        help="Get python installers for a different system (Windows, Darwin, Linux)"
+        help="Get python installers for a different system (Windows, Darwin, Linux) (Online only)"
     )
     parser.add_argument(
         "--machine",
         action="store",
-        help="Get python installers for a different architecture (Windows: AMD64, ARM64, x86)"
+        help="Get python installers for a different architecture (Windows: AMD64, ARM64, x86) (Online only)"
+    )
+
+    parser.add_argument(
+        "--prerelease",
+        action="store_true",
+        help="Include prerelease versions (Online only)"
     )
 
     vals = parser.parse_args(args)
@@ -164,7 +170,15 @@ def display_local_installs(min_ver=None, max_ver=None, compatible=None):
         print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
 
 
-def display_remote_binaries(min_ver, max_ver, compatible, all_binaries, system, machine):
+def display_remote_binaries(
+        min_ver,
+        max_ver,
+        compatible,
+        all_binaries,
+        system,
+        machine,
+        prerelease
+):
     specs = []
     if min_ver:
         specs.append(f">={min_ver}")
@@ -177,9 +191,9 @@ def display_remote_binaries(min_ver, max_ver, compatible, all_binaries, system, 
 
     searcher = _laz.PythonOrgSearch(system=system, machine=machine)
     if all_binaries:
-        releases = searcher.all_matching_binaries(spec)
+        releases = searcher.all_matching_binaries(spec, prereleases=prerelease)
     else:
-        releases = searcher.latest_minor_binaries(spec)
+        releases = searcher.latest_minor_binaries(spec, prereleases=prerelease)
 
     headings = ["Python Version", "URL"]
     max_url_len = max(
@@ -217,6 +231,7 @@ def main():
                     vals.all_binaries,
                     system,
                     machine,
+                    vals.prerelease,
                 )
             except _laz.URLError:
                 print("Could not connect to python.org")
