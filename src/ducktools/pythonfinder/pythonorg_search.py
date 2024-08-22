@@ -199,6 +199,7 @@ class PythonOrgSearch(Prefab):
 
     @property
     def releases(self) -> list[PythonRelease]:
+        """Get all releases from python.org/api/v2/downloads/release"""
         if self._releases is None:
             if self.release_page_cache:
                 data = json.loads(self.release_page_cache)
@@ -213,6 +214,7 @@ class PythonOrgSearch(Prefab):
 
     @property
     def release_files(self) -> list[PythonReleaseFile]:
+        """Get all release files from python.org/api/v2/downloads/release"""
         if self._release_files is None:
             if self.release_file_page_cache:
                 data = json.loads(self.release_file_page_cache)
@@ -224,6 +226,13 @@ class PythonOrgSearch(Prefab):
         return self._release_files
 
     def matching_versions(self, specifier: SpecifierSet, prereleases=False) -> list[PythonRelease]:
+        """
+        Get all python releases with versions contained in the specifier set.
+
+        :param specifier: Python version specifier
+        :param prereleases: Include prereleases
+        :return: list of matching releases
+        """
         return [
             release
             for release in self.releases
@@ -235,7 +244,13 @@ class PythonOrgSearch(Prefab):
         specifier: SpecifierSet,
         prereleases: bool = False
     ) -> list[PythonDownload]:
+        """
+        Get all matching download files for the given specifier set
 
+        :param specifier: Python version specifier
+        :param prereleases: Include prereleases
+        :return: list of matching python downloads
+        """
         matching_downloads = []
         releases = self.matching_versions(specifier, prereleases)
 
@@ -260,6 +275,14 @@ class PythonOrgSearch(Prefab):
         return matching_downloads
 
     def all_matching_binaries(self, specifier: SpecifierSet, prereleases=False) -> list[PythonDownload]:
+        """
+        Get all binary (source on linux) downloads
+        for the given system/platform for the given specifier set
+
+        :param specifier: Python version specifier
+        :param prereleases: Include prereleases
+        :return: list of matching python downloads
+        """
         tags = get_download_tags(system=self.system, machine=self.machine)
         latest_binaries = []
 
@@ -271,6 +294,14 @@ class PythonOrgSearch(Prefab):
         return latest_binaries
 
     def latest_minor_binaries(self, specifier: SpecifierSet, prereleases=False) -> list[PythonDownload]:
+        """
+        Get the latest binary (source on linux) downloads
+        for each minor version that matches the given specifier set
+
+        :param specifier: Python version specifier
+        :param prereleases: Include prereleases
+        :return: list of matching python downloads
+        """
         tags = get_download_tags(system=self.system, machine=self.machine)
         latest_binaries = []
         versions_included = set()
@@ -287,6 +318,13 @@ class PythonOrgSearch(Prefab):
         return latest_binaries
 
     def latest_binary_match(self, specifier: SpecifierSet, prereleases=False) -> PythonDownload:
+        """
+        Get the latest binary (source on linux) download that matches a given specifier set
+
+        :param specifier: Python version specifier
+        :param prereleases: Include prereleases
+        :return: Matching PythonDownload object
+        """
         tags = get_download_tags(system=self.system, machine=self.machine)
         for tag in tags:
             for download in self.matching_downloads(specifier, prereleases):
