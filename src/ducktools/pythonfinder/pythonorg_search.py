@@ -119,10 +119,6 @@ class PythonRelease(Prefab):
             self._version_spec = Version(self.version_str)
         return self._version_spec
 
-    @property
-    def is_prerelease(self):
-        return self.version_spec.is_prerelease
-
     @classmethod
     def from_dict(cls, dict_data: dict):
         # Filter out any extra keys
@@ -183,6 +179,10 @@ class PythonDownload(Prefab):
             self._version_spec = Version(self.version)
         return self._version_spec
 
+    @property
+    def is_prerelease(self):
+        return self.version_spec.is_prerelease
+
 
 class PythonOrgSearch(Prefab):
     release_page: str = RELEASE_PAGE
@@ -202,7 +202,7 @@ class PythonOrgSearch(Prefab):
         if self._releases is None:
             if self.release_page_cache:
                 data = json.loads(self.release_page_cache)
-            else:
+            else:  # pragma: nocover
                 with urlopen(self.release_page) as req:
                     data = json.load(req)
 
@@ -216,7 +216,7 @@ class PythonOrgSearch(Prefab):
         if self._release_files is None:
             if self.release_file_page_cache:
                 data = json.loads(self.release_file_page_cache)
-            else:
+            else:  # pragma: nocover
                 with urlopen(self.release_file_page) as req:
                     data = json.load(req)
 
