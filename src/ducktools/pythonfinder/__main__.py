@@ -132,10 +132,11 @@ def display_local_installs(min_ver=None, max_ver=None, compatible=None):
     print("Discoverable Python Installs")
     if sys.platform == "win32":
         print("+ - Listed in the Windows Registry ")
+        print("^ - This is a 32-bit Python install")
     if sys.platform != "win32":
-        print("[] - This python install is shadowed by another on Path")
-    print("* - This is the active python executable used to call this module")
-    print("** - This is the parent python executable of the venv used to call this module")
+        print("[] - This Python install is shadowed by another on Path")
+    print("* - This is the active Python executable used to call this module")
+    print("** - This is the parent Python executable of the venv used to call this module")
     print()
     print(headings_str)
     print(f"| {'-' * len(headings[0])} | {'-' * max_executable_len} |")
@@ -154,18 +155,23 @@ def display_local_installs(min_ver=None, max_ver=None, compatible=None):
                 continue
 
         version_str = install.version_str
-        if install.shadowed:
-            version_str = f"[{version_str}]"
+
+        if sys.platform == "win32":
+            if install.metadata.get("InWindowsRegistry"):
+                version_str = f"+{version_str}"
+            if install.architecture == "32bit":
+                version_str = f"^{version_str}"
 
         if install.executable == sys.executable:
             version_str = f"*{version_str}"
-        elif sys.prefix != sys.base_prefix and install.executable.startswith(
-                sys.base_prefix
+        elif (
+            sys.prefix != sys.base_prefix
+            and os.path.commonpath([install.executable, sys.base_prefix]) == sys.base_prefix
         ):
             version_str = f"**{version_str}"
 
-        if sys.platform == "win32" and install.metadata.get("InWindowsRegistry"):
-            version_str = f"+{version_str}"
+        if install.shadowed:
+            version_str = f"[{version_str}]"
 
         print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
 
