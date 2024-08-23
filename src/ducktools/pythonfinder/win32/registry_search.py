@@ -109,12 +109,15 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                             metadata["InWindowsRegistry"] = True
 
                         if python_path and python_version:
-                            yield PythonInstall.from_str(
-                                version=python_version,
-                                executable=python_path,
-                                architecture=architecture,
-                                metadata=metadata,
-                            )
+                            try:
+                                yield PythonInstall.from_str(
+                                    version=python_version,
+                                    executable=python_path,
+                                    architecture=architecture,
+                                    metadata=metadata,
+                                )
+                            except ValueError:
+                                pass
 
         finally:
             if base_key:
