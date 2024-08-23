@@ -99,7 +99,11 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                                 if install_key:
                                     winreg.CloseKey(install_key)
 
-                            python_version = metadata.get("Version")
+                            python_version: str | None = metadata.get("Version")
+                            # Pyenv puts architecture information in the Version value for some reason
+                            if python_version:
+                                python_version = python_version.split("-")[0]
+
                             architecture = metadata.get("SysArchitecture")
 
                             metadata["InWindowsRegistry"] = True
