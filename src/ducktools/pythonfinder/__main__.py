@@ -26,7 +26,7 @@ import sys
 import os
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
-from ducktools.pythonfinder import list_python_installs
+from ducktools.pythonfinder import list_python_installs, __version__
 
 _laz = LazyImporter(
     [
@@ -78,35 +78,42 @@ def parse_args(args):
         prog="ducktools-pythonfinder",
         description="Discover base Python installs",
     )
-    parser.add_argument("--min", help="Specify minimum Python version")
-    parser.add_argument("--max", help="Specify maximum Python version")
-    parser.add_argument("--compatible", help="Specify compatible Python version")
-    parser.add_argument(
-        "--online",
-        action="store_true",
-        help="Get links to binaries from python.org (Windows only)"
+    parser.add_argument("-V", "--version", action="version", version=__version__)
+
+    subparsers = parser.add_subparsers(dest="command", required=False)
+
+    online = subparsers.add_parser(
+        "online",
+        help="Get links to binaries from python.org"
     )
-    parser.add_argument(
+
+    # Shared arguments
+    for p in [parser, online]:
+        p.add_argument("--min", help="Specify minimum Python version")
+        p.add_argument("--max", help="Specify maximum Python version")
+        p.add_argument("--compatible", help="Specify compatible Python version")
+
+    online.add_argument(
         "--all-binaries",
         action="store_true",
         help="Provide *all* matching binaries and "
-             "not just the latest minor versions (Online only)"
+             "not just the latest minor versions"
     )
-    parser.add_argument(
+    online.add_argument(
         "--system",
         action="store",
-        help="Get python installers for a different system (Windows, Darwin, Linux) (Online only)"
+        help="Get python installers for a different system (eg: Windows, Darwin, Linux)"
     )
-    parser.add_argument(
+    online.add_argument(
         "--machine",
         action="store",
-        help="Get python installers for a different architecture (Windows: AMD64, ARM64, x86) (Online only)"
+        help="Get python installers for a different architecture (eg: AMD64, ARM64, x86)"
     )
 
-    parser.add_argument(
+    online.add_argument(
         "--prerelease",
         action="store_true",
-        help="Include prerelease versions (Online only)"
+        help="Include prerelease versions"
     )
 
     vals = parser.parse_args(args)
@@ -224,9 +231,8 @@ def main():
 
     if sys.argv[1:]:
         vals = parse_args(sys.argv[1:])
-        online = vals.online
 
-        if online:
+        if vals.command == "online":
             system = vals.system if vals.system else _laz.platform.system()
             machine = vals.machine if vals.machine else _laz.platform.machine()
             try:
