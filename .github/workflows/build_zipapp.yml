@@ -1,7 +1,10 @@
 name: Build zipapp
 
-# Manual run for setup/testing
-on: workflow_dispatch
+# run on push for setup/testing
+on:
+  push:
+    branches:
+      - 'remote_zipapp'
 #on:
 #  release:
 #    types: [published]
