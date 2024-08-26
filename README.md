@@ -1,6 +1,7 @@
 # ducktools: pythonfinder #
 
-Find python installs on Linux, Windows and MacOS.
+Find local python installs on Windows/Linux/MacOS and find the latest installers from python.org
+for Windows and MacOS or sources for Linux (as python.org does not provide linux installers).
 
 Requires Python >= 3.8 (but will discover older Python installs)
 
@@ -18,7 +19,7 @@ Python versions listed can be restricted by using the `--max`, `--min` and
 and `~=` for compatible in python version specifiers.
 
 If you wish to find the latest binaries available from python.org for your platform 
-(or sources on Linux) there is the additional `--online` option with some other extra flags.
+(or sources on Linux) there is the additional `online` command with some extra flags.
 
 By default it will fetch the latest patches for each Python release (eg: 2.7.18 for 2.7) for 
 the hardware you're on. The filters for local versions also work.
@@ -29,7 +30,7 @@ the hardware you're on. The filters for local versions also work.
 * `--prerelease` includes prerelease versions in the search.
 
 Example: 
-`python pythonfinder.pyz --online --min 3.10 --system Windows --machine AMD64`
+`python pythonfinder.pyz online --min 3.10 --system Windows --machine AMD64`
 
 ```
 | Python Version | URL                                                                |
