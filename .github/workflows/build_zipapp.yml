@@ -1,7 +1,7 @@
-name: Build pythonfinder.pyz zipapp
+name: Build zipapp
 
 # Manual run for setup/testing
-on: workflow-dispatch
+on: workflow_dispatch
 #on:
 #  release:
 #    types: [published]
