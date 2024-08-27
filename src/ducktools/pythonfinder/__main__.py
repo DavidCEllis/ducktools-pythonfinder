@@ -209,16 +209,20 @@ def display_remote_binaries(
         releases = searcher.latest_minor_binaries(spec, prereleases=prerelease)
 
     headings = ["Python Version", "URL"]
-    max_url_len = max(
-        len(headings[1]), max(len(release.url) for release in releases)
-    )
-    headings_str = f"| {headings[0]} | {headings[1]:<{max_url_len}s} |"
 
-    print(headings_str)
-    print(f"| {'-' * len(headings[0])} | {'-' * max_url_len} |")
+    if releases:
+        max_url_len = max(
+            len(headings[1]), max(len(release.url) for release in releases)
+        )
+        headings_str = f"| {headings[0]} | {headings[1]:<{max_url_len}s} |"
 
-    for release in releases:
-        print(f"| {release.version:>14s} | {release.url:<{max_url_len}s} |")
+        print(headings_str)
+        print(f"| {'-' * len(headings[0])} | {'-' * max_url_len} |")
+
+        for release in releases:
+            print(f"| {release.version:>14s} | {release.url:<{max_url_len}s} |")
+    else:
+        print("No Python releases found matching specification")
 
 
 def main():
