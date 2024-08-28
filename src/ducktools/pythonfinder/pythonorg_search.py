@@ -73,7 +73,12 @@ def get_download_tags(system=None, machine=None) -> list[str]:
                 f"python.org does not provide installers for {system!r} on {machine!r}"
             )
 
-        tags = [item.format(machine_tag=machine_tag) for item in installer_extensions]
+        tags = [
+            item.format(machine_tag=machine_tag)
+            if machine_tag
+            else item[1:].format(machine_tag=machine_tag)
+            for item in installer_extensions
+        ]
     elif system == "Darwin":
         # MacOS Installers - prefer universal2 installers
         tags = ["-macos11.pkg"]
