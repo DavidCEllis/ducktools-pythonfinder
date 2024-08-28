@@ -26,7 +26,7 @@ import os
 import os.path
 from _collections_abc import Iterator
 
-from ..shared import PythonInstall
+from ..shared import PythonInstall, get_install_details
 
 
 PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions")
@@ -39,31 +39,43 @@ def get_pyenv_pythons(
         return
 
     for p in os.scandir(versions_folder):
-        executable = os.path.join(p.path, "python.exe")
+        path_base = os.path.basename(p.path)
 
-        if os.path.exists(executable):
-            split_version = p.name.split("-")
+        if path_base.startswith("pypy"):
+            executable = os.path.join(p.path, "pypy.exe")
+            if os.path.exists(executable):
+                yield get_install_details(executable)
+        elif path_base.startswith("graalpy"):
+            # Graalpy exe in bin subfolder
+            executable = os.path.join(p.path, "bin", "graalpy.exe")
+            if os.path.exists(executable):
+                yield get_install_details(executable)
+        else:
+            # Regular CPython
+            executable = os.path.join(p.path, "python.exe")
 
-            # If there are 1 or 2 arguments this is a recognised version
-            # Otherwise it is unrecognised
-            if len(split_version) == 2:
-                version, arch = split_version
+            if os.path.exists(executable):
+                split_version = p.name.split("-")
 
-                # win32 in pyenv name means 32 bit python install
-                # 'arm' is the only alternative which will be 64bit
-                arch = "32bit" if arch == "win32" else "64bit"
-                try:
-                    yield PythonInstall.from_str(
-                        version, executable, architecture=arch
-                    )
-                except ValueError:
-                    pass
-            elif len(split_version) == 1:
-                version = split_version[0]
-                try:
-                    yield PythonInstall.from_str(
-                        version, executable, architecture="64bit"
-                    )
-                except ValueError:
-                    pass
+                # If there are 1 or 2 arguments this is a recognised version
+                # Otherwise it is unrecognised
+                if len(split_version) == 2:
+                    version, arch = split_version
 
+                    # win32 in pyenv name means 32 bit python install
+                    # 'arm' is the only alternative which will be 64bit
+                    arch = "32bit" if arch == "win32" else "64bit"
+                    try:
+                        yield PythonInstall.from_str(
+                            version, executable, architecture=arch
+                        )
+                    except ValueError:
+                        pass
+                elif len(split_version) == 1:
+                    version = split_version[0]
+                    try:
+                        yield PythonInstall.from_str(
+                            version, executable, architecture="64bit"
+                        )
+                    except ValueError:
+                        pass
