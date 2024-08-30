@@ -112,6 +112,9 @@ class DetailsScript:
                     self._source_code = f.read()
             elif os.path.splitext(archive_path := sys.argv[0])[1].startswith(".pyz"):
                 script_path = os.path.relpath(details_script.__file__, archive_path)
+                if sys.platform == "win32":
+                    # Windows paths have backslashes, these do not work in zipfiles
+                    script_path = script_path.replace("\\", "/")
                 script = _laz.zipfile.Path(archive_path, script_path)
                 self._source_code = script.read_text()
             else:
