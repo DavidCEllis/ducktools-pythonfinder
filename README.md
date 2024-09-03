@@ -5,6 +5,11 @@ for Windows and MacOS or sources for Linux (as python.org does not provide linux
 
 Requires Python >= 3.8 (but will discover older Python installs)
 
+[Download the zipapp here](https://github.com/DavidCEllis/ducktools-pythonfinder/releases/latest/download/pythonfinder.pyz)
+
+It is also available as a library on PyPI that can be installed with pip:
+`python -m pip install ducktools-pythonfinder`
+
 ## Command Line Usage ##
 
 `ducktools-pythonfinder` can be used as a module or as a bundled zipapp (as `pythonfinder.pyz`).
