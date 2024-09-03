@@ -267,7 +267,7 @@ def _get_uv_python_path() -> str | None:
 
 
 def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
-    python_exe = "python.exe" if sys.platform == "win32" else "python"
+    python_exe = "python.exe" if sys.platform == "win32" else "bin/python"
     python_path = os.path.join(direntry, python_exe)
 
     install: PythonInstall | None = None
