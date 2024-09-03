@@ -26,6 +26,8 @@ import sys
 import os
 import os.path
 
+from _collections_abc import Iterator
+
 from ducktools.classbuilder import slotclass, Field, SlotFields
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
@@ -229,7 +231,8 @@ def get_install_details(executable: str) -> PythonInstall | None:
 
 
 def get_folder_pythons(
-    base_folder: str | os.PathLike, basenames: tuple[str] = ("python", "pypy")
+    base_folder: str | os.PathLike,
+    basenames: tuple[str] = ("python", "pypy")
 ):
     regexes = [_python_exe_regex(name) for name in basenames]
 
@@ -242,4 +245,60 @@ def get_folder_pythons(
             ):
                 install = get_install_details(file_path.path)
                 if install:
+                    yield install
+
+
+# UV Specific finder
+def _get_uv_python_path() -> str | None:
+    try:
+        uv_python_find = _laz.subprocess.run(
+            ["uv", "python", "dir"],
+            check=True,
+            text=True,
+            capture_output=True
+        )
+    except _laz.subprocess.CalledProcessError:
+        uv_python_dir = None
+    else:
+        # remove newline
+        uv_python_dir = uv_python_find.stdout.strip()
+
+    return uv_python_dir
+
+
+def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
+    python_exe = "python.exe" if sys.platform == "win32" else "python"
+    python_path = os.path.join(direntry, python_exe)
+
+    install: PythonInstall | None = None
+
+    if os.path.exists(python_path):
+        try:
+            implementation, version, platform, arch, _ = direntry.name.split("-")
+        except ValueError:
+            # Directory name format has changed
+            # Slow backup - ask python itself
+            install = get_install_details(python_path)
+        else:
+            if implementation == "cpython":
+                install = PythonInstall.from_str(
+                    version=version,
+                    executable=python_path,
+                    architecture="32bit" if arch in {"i686", "armv7"} else "64bit",
+                    implementation=implementation,
+                )
+            else:
+                # Get additional alternate implementation details
+                install = get_install_details(python_path)
+
+    return install
+
+
+def get_uv_pythons() -> Iterator[PythonInstall]:
+    # This takes some shortcuts over the regular pythonfinder
+    # As the UV folders give the python version and the implementation
+    if uv_python_path := _get_uv_python_path():
+        with os.scandir(uv_python_path) as fld:
+            for f in fld:
+                if f.is_dir() and (install := _implementation_from_uv_dir(f)):
                     yield install

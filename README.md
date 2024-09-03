@@ -49,13 +49,19 @@ The module provides two main functions for searching for local python installs:
 * `get_python_installs` is a generator that will yield each python version it discovers
 * `list_python_installs` will take the python versions discovered by `get_python_installs`
   and return a sorted list from newest to oldest python version discovered.
+  * For the purposes of sorting, prerelease versions are considered older than any released
+    version.
 
 On Windows these methods will search the registry for PEP514 recorded python installs
-before checking for any `pyenv-win` installs that have not been registered.
+before checking for any `pyenv-win` installs that have not been registered. Finally, if
+`uv` is available it will try to find Python installs managed by `uv`.
 
-On Linux and MacOS this will search for `pyenv` installs first and then for any
-`python*` binaries found on `path`. For those found on `path` they will be made
-to run a small script to identify the version.
+On Linux and MacOS this will search for `pyenv` installs first, 
+if `uv` is available it will then try to find `uv` managed python installs. 
+Finally it will search `PATH` for any other `python*` binaries that might be available.
+
+If a python install is found twice (for instance a pyenv install in the windows registry)
+it will only be returned the first time it is found.
 
 The python installs will be returned as instances of `PythonInstall` which will
 contain version info and executable path along with some other useful metadata.

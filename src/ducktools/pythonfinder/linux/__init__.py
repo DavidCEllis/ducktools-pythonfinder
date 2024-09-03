@@ -27,7 +27,7 @@ import os.path
 import itertools
 from _collections_abc import Iterator
 
-from ..shared import PythonInstall, get_folder_pythons
+from ..shared import PythonInstall, get_folder_pythons, get_uv_pythons
 from .pyenv_search import get_pyenv_pythons
 
 
@@ -57,7 +57,11 @@ def get_path_pythons() -> Iterator[PythonInstall]:
 def get_python_installs():
     listed_pythons = set()
 
-    for py in itertools.chain(get_pyenv_pythons(), get_path_pythons()):
+    for py in itertools.chain(
+        get_pyenv_pythons(),
+        get_uv_pythons(),
+        get_path_pythons(),
+    ):
         if py.executable not in listed_pythons:
             yield py
             listed_pythons.add(py.executable)
