@@ -39,6 +39,9 @@ dynamic = ['version']
 [project.optional-dependencies]
 testing = ["pytest", "pytest-cov", "pyfakefs"]
 
+[project.scripts]
+"ducktools-pythonfinder" = "ducktools.pythonfinder.__main__:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
