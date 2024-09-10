@@ -121,6 +121,12 @@ class TestWindows:
         assert match.version == "3.13.0rc1"
         assert match.is_prerelease is True
 
+    def test_latest_download(self, searcher):
+        s = searcher(self.system, self.machine)
+        download = s.latest_python_download()
+        assert download.version == "3.12.5"
+        assert download.url.endswith("3.12.5-amd64.exe")
+
 
 class TestMacOS:
     system = "Darwin"
@@ -168,6 +174,12 @@ class TestMacOS:
         for v in all_bins:
             assert any(v.url.endswith(tag) for tag in tags)
 
+    def test_latest_download(self, searcher):
+        s = searcher(self.system, self.machine)
+        download = s.latest_python_download()
+        assert download.version == "3.12.5"
+        assert download.url.endswith("3.12.5-macos11.pkg")
+
 
 class TestLinux:
     system = "Linux"
@@ -214,3 +226,9 @@ class TestLinux:
 
         for v in all_bins:
             assert any(v.url.endswith(tag) for tag in tags)
+
+    def test_latest_download(self, searcher):
+        s = searcher(self.system, self.machine)
+        download = s.latest_python_download()
+        assert download.version == "3.12.5"
+        assert download.url.endswith("3.12.5.tgz")

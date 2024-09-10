@@ -322,7 +322,7 @@ class PythonOrgSearch(Prefab):
 
         return latest_binaries
 
-    def latest_binary_match(self, specifier: SpecifierSet, prereleases=False) -> PythonDownload:
+    def latest_binary_match(self, specifier: SpecifierSet, prereleases=False) -> PythonDownload | None:
         """
         Get the latest binary (source on linux) download that matches a given specifier set
 
@@ -335,3 +335,31 @@ class PythonOrgSearch(Prefab):
             for download in self.matching_downloads(specifier, prereleases):
                 if download.url.endswith(tag):
                     return download
+
+    def latest_python_download(self, prereleases=False) -> PythonDownload | None:
+        """
+        Get the absolute latest python release.
+        :param prereleases: Include prereleases
+        :return: PythonDownload object or None
+        """
+        tags = get_download_tags(system=self.system, machine=self.machine)
+
+        release = None
+        for r in self.releases:
+            if not prereleases and r.pre_release:
+                continue
+            release = r
+            break
+
+        if release:
+            for release_file in self.release_files:
+                if release_file.release == release.resource_uri:
+                    for tag in tags:
+                        if release_file.url.endswith(tag):
+                            download = PythonDownload(
+                                name=release.name,
+                                version=release.version_str,
+                                url=release_file.url,
+                                md5_sum=release_file.md5_sum,
+                            )
+                            return download
