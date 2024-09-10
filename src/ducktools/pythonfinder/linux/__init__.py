@@ -27,22 +27,31 @@ import os.path
 import itertools
 from _collections_abc import Iterator
 
-from ..shared import PythonInstall, get_folder_pythons, get_uv_pythons
+from ..shared import PythonInstall, get_folder_pythons, get_uv_pythons, get_uv_python_path
 from .pyenv_search import get_pyenv_pythons
-
-
-PATH_FOLDERS = os.environ.get("PATH").split(":")
-_PYENV_ROOT = os.environ.get("PYENV_ROOT")
 
 
 def get_path_pythons() -> Iterator[PythonInstall]:
     exe_names = set()
 
-    for fld in PATH_FOLDERS:
+    path_folders = os.environ.get("PATH").split(":")
+    pyenv_root = os.environ.get("PYENV_ROOT")
+    uv_root = get_uv_python_path()
+
+    excluded_folders = [pyenv_root, uv_root]
+
+    for fld in path_folders:
         # Don't retrieve pyenv installs
-        if _PYENV_ROOT and fld.startswith(_PYENV_ROOT):
+        skip_folder = False
+        for exclude in excluded_folders:
+            if exclude and fld.startswith(exclude):
+                skip_folder = True
+                break
+
+        if skip_folder:
             continue
-        elif not os.path.exists(fld):
+
+        if not os.path.exists(fld):
             continue
 
         for install in get_folder_pythons(fld):
