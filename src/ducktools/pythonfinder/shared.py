@@ -249,7 +249,7 @@ def get_folder_pythons(
 
 
 # UV Specific finder
-def _get_uv_python_path() -> str | None:
+def get_uv_python_path() -> str | None:
     try:
         uv_python_find = _laz.subprocess.run(
             ["uv", "python", "dir"],
@@ -297,7 +297,7 @@ def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
 def get_uv_pythons() -> Iterator[PythonInstall]:
     # This takes some shortcuts over the regular pythonfinder
     # As the UV folders give the python version and the implementation
-    if uv_python_path := _get_uv_python_path():
+    if uv_python_path := get_uv_python_path():
         with os.scandir(uv_python_path) as fld:
             for f in fld:
                 if f.is_dir() and (install := _implementation_from_uv_dir(f)):
