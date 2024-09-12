@@ -24,7 +24,14 @@ from pathlib import Path
 
 import pytest
 
+from ducktools.pythonfinder import details_script
+
 
 @pytest.fixture(scope="session")
 def sources_folder():
     return Path(__file__).parent / "sources"
+
+
+@pytest.fixture
+def uses_details_script(fs):
+    fs.add_real_file(details_script.__file__)

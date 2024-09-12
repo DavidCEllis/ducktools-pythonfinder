@@ -217,6 +217,9 @@ def get_install_details(executable: str) -> PythonInstall | None:
             text=True,
             check=True,
         ).stdout
+    except OSError:
+        # Something else has gone wrong
+        return None
     except (_laz.subprocess.CalledProcessError, FileNotFoundError):
         # Potentially this is micropython which does not support
         # piping from stdin. Try using a file in a temporary folder.
@@ -281,7 +284,10 @@ def get_uv_python_path() -> str | None:
     return uv_python_dir
 
 
-def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
+def _implementation_from_uv_dir(
+    direntry: os.DirEntry,
+    query_executables: bool = True,
+) -> PythonInstall | None:
     python_exe = "python.exe" if sys.platform == "win32" else "bin/python"
     python_path = os.path.join(direntry, python_exe)
 
@@ -293,7 +299,8 @@ def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
         except ValueError:
             # Directory name format has changed
             # Slow backup - ask python itself
-            install = get_install_details(python_path)
+            if query_executables:
+                install = get_install_details(python_path)
         else:
             if implementation == "cpython":
                 install = PythonInstall.from_str(
@@ -304,16 +311,20 @@ def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
                 )
             else:
                 # Get additional alternate implementation details
-                install = get_install_details(python_path)
+                if query_executables:
+                    install = get_install_details(python_path)
 
     return install
 
 
-def get_uv_pythons() -> Iterator[PythonInstall]:
+def get_uv_pythons(query_executables=True) -> Iterator[PythonInstall]:
     # This takes some shortcuts over the regular pythonfinder
     # As the UV folders give the python version and the implementation
     if uv_python_path := get_uv_python_path():
         with os.scandir(uv_python_path) as fld:
             for f in fld:
-                if f.is_dir() and (install := _implementation_from_uv_dir(f)):
+                if (
+                    f.is_dir()
+                    and (install := _implementation_from_uv_dir(f, query_executables))
+                ):
                     yield install

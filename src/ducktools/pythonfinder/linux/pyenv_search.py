@@ -50,6 +50,8 @@ PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions
 
 def get_pyenv_pythons(
     versions_folder: str | os.PathLike = PYENV_VERSIONS_FOLDER,
+    *,
+    query_executables: bool = True,
 ) -> Iterator[PythonInstall]:
     if not os.path.exists(versions_folder):
         return
@@ -64,5 +66,5 @@ def get_pyenv_pythons(
         if os.path.exists(executable):
             if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
                 yield PythonInstall.from_str(p.name, executable)
-            elif install := get_install_details(executable):
+            elif query_executables and (install := get_install_details(executable)):
                 yield install

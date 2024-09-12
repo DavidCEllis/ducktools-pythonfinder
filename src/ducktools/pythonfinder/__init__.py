@@ -24,6 +24,7 @@
 # Find platform python versions
 
 __all__ = [
+    "__version__",
     "get_python_installs",
     "list_python_installs",
     "PythonInstall",
@@ -42,9 +43,9 @@ else:
     from .linux import get_python_installs
 
 
-def list_python_installs():
+def list_python_installs(*, query_executables=True):
     return sorted(
-        get_python_installs(),
+        get_python_installs(query_executables=query_executables),
         reverse=True,
         key=lambda x: (x.version[3], *x.version[:3], x.version[4])
     )

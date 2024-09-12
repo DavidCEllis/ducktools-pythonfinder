@@ -110,7 +110,7 @@ def test_32bit_version(fs):
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_invalid_ver_win(fs):
+def test_invalid_ver_win(fs, uses_details_script):
     # Ignore non-standard versions
 
     tmpdir = "c:\\fake_folder"
@@ -157,7 +157,7 @@ def test_fs_versions_nix(fs):
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
-def test_invalid_ver_nix(fs):
+def test_invalid_ver_nix(fs, uses_details_script):
     # Test folders in fake file system
 
     tmpdir = "~/.pyenv/versions"
