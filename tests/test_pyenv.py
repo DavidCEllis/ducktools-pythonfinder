@@ -113,27 +113,29 @@ def test_32bit_version(fs):
 def test_invalid_ver_win(fs, uses_details_script):
     # Ignore non-standard versions
 
-    tmpdir = "c:\\fake_folder"
+    pyenv_fld = "C:\\Fake_Folder"
 
-    py_folder = os.path.join(tmpdir, "external-python3.12.1")
+    py_folder = os.path.join(pyenv_fld, "external-python3.12.1")
     py_exe = os.path.join(py_folder, "python.exe")
 
     fs.create_dir(py_folder)
     fs.create_file(py_exe)
 
-    py2_folder = os.path.join(tmpdir, "ext3.13.0")
+    py2_folder = os.path.join(pyenv_fld, "ext3.13.0")
     py2_exe = os.path.join(py2_folder, "python.exe")
 
     fs.create_dir(py2_folder)
     fs.create_file(py2_exe)
 
-    py3_folder = os.path.join(tmpdir, "invalid-version-3.12.1")
+    py3_folder = os.path.join(pyenv_fld, "invalid-version-3.12.1")
     py3_exe = os.path.join(py3_folder, "python.exe")
 
     fs.create_dir(py3_folder)
     fs.create_file(py3_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir))
+    with patch("subprocess.run") as run_mock:
+        versions = list(get_pyenv_pythons(pyenv_fld))
+        run_mock.assert_not_called()
 
     assert versions == []
 
@@ -183,7 +185,10 @@ def test_invalid_ver_nix(fs, uses_details_script):
     fs.create_dir(os.path.join(py3_folder, "bin"))
     fs.create_file(py3_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir))
+    with patch("subprocess.run") as run_mock:
+        run_mock.side_effect = OSError("Failure")
+        versions = list(get_pyenv_pythons(tmpdir))
+        assert run_mock.call_count == 3
 
     assert versions == []
 
