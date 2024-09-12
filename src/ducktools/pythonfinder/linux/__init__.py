@@ -63,14 +63,17 @@ def get_path_pythons() -> Iterator[PythonInstall]:
             yield install
 
 
-def get_python_installs():
+def get_python_installs(*, query_executables=True):
     listed_pythons = set()
 
-    for py in itertools.chain(
-        get_pyenv_pythons(),
-        get_uv_pythons(),
-        get_path_pythons(),
-    ):
+    chain_commands = [
+        get_pyenv_pythons(query_executables=query_executables),
+        get_uv_pythons(query_executables=query_executables),
+    ]
+    if query_executables:
+        chain_commands.append(get_path_pythons())
+
+    for py in itertools.chain.from_iterable(chain_commands):
         if py.executable not in listed_pythons:
             yield py
             listed_pythons.add(py.executable)

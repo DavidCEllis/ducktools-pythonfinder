@@ -28,18 +28,19 @@ import os.path
 
 from _collections_abc import Iterator
 
-from ducktools.classbuilder import slotclass, Field, SlotFields
+from ducktools.classbuilder.prefab import Prefab, attribute
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
 from . import details_script
 
 _laz = LazyImporter(
     [
-        ModuleImport("re"),
-        ModuleImport("subprocess"),
-        ModuleImport("platform"),
         FromImport("glob", "glob"),
         ModuleImport("json"),
+        ModuleImport("platform"),
+        ModuleImport("re"),
+        ModuleImport("subprocess"),
+        ModuleImport("tempfile"),
         ModuleImport("zipfile"),
     ]
 )
@@ -95,17 +96,12 @@ def version_tuple_to_str(version_tuple):
     return f"{major}.{minor}.{micro}{releaselevel}{serial}"
 
 
-@slotclass
-class DetailsScript:
+class DetailsScript(Prefab):
     """
     Class to obtain and cache the source code of details_script.py
     to use on external Pythons.
     """
-    __slots__ = SlotFields(
-        _source_code=Field(default=None)
-    )
-
-    _source_code: str | None
+    _source_code: str | None = attribute(default=None, private=True)
 
     def get_source_code(self):
         if self._source_code is None:
@@ -128,22 +124,24 @@ class DetailsScript:
 details = DetailsScript()
 
 
-@slotclass
-class PythonInstall:
-    __slots__ = SlotFields(
-        version=Field(),
-        executable=Field(),
-        architecture="64bit",
-        implementation="cpython",
-        metadata=Field(default_factory=dict),
-        shadowed=False,
-    )
+class PythonInstall(Prefab):
     version: tuple[int, int, int, str, int]
     executable: str
-    architecture: str
-    implementation: str
-    metadata: dict
-    shadowed: bool
+    architecture: str = "64bit"
+    implementation: str = "cpython"
+    metadata: dict = attribute(default_factory=dict)
+    shadowed: bool = False
+
+    def __prefab_post_init__(
+        self,
+        version: tuple[int, int, int] | tuple[int, int, int, str, int]
+    ):
+        if len(version) == 3:
+            # Micropython gives an invalid 3 part version here
+            # Add the extras to avoid breaking
+            self.version = tuple([*version, "final", 0])  # type: ignore
+        else:
+            self.version = version
 
     @property
     def version_str(self) -> str:
@@ -219,12 +217,32 @@ def get_install_details(executable: str) -> PythonInstall | None:
             text=True,
             check=True,
         ).stdout
-    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+    except OSError:
+        # Something else has gone wrong
         return None
+    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+        # Potentially this is micropython which does not support
+        # piping from stdin. Try using a file in a temporary folder.
+        # Python 3.12 has delete_on_close that would make TemporaryFile
+        # Usable on windows but for now use a directory
+        with _laz.tempfile.TemporaryDirectory() as tempdir:
+            temp_script = os.path.join(tempdir, "details_script.py")
+            with open(temp_script, "w") as f:
+                f.write(source)
+            try:
+                detail_output = _laz.subprocess.run(
+                    [executable, temp_script],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                ).stdout
+            except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+                return None
 
     try:
         output = _laz.json.loads(detail_output)
-    except _laz.json.JSONDecodeError:
+    except _laz.json.JSONDecodeError as e:
+        print(e)
         return None
 
     return PythonInstall.from_json(**output)
@@ -266,7 +284,10 @@ def get_uv_python_path() -> str | None:
     return uv_python_dir
 
 
-def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
+def _implementation_from_uv_dir(
+    direntry: os.DirEntry,
+    query_executables: bool = True,
+) -> PythonInstall | None:
     python_exe = "python.exe" if sys.platform == "win32" else "bin/python"
     python_path = os.path.join(direntry, python_exe)
 
@@ -278,9 +299,10 @@ def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
         except ValueError:
             # Directory name format has changed
             # Slow backup - ask python itself
-            install = get_install_details(python_path)
+            if query_executables:
+                install = get_install_details(python_path)
         else:
-            if implementation == "cpython":
+            if implementation in {"cpython", "pypy"}:
                 install = PythonInstall.from_str(
                     version=version,
                     executable=python_path,
@@ -289,16 +311,20 @@ def _implementation_from_uv_dir(direntry: os.DirEntry) -> PythonInstall | None:
                 )
             else:
                 # Get additional alternate implementation details
-                install = get_install_details(python_path)
+                if query_executables:
+                    install = get_install_details(python_path)
 
     return install
 
 
-def get_uv_pythons() -> Iterator[PythonInstall]:
+def get_uv_pythons(query_executables=True) -> Iterator[PythonInstall]:
     # This takes some shortcuts over the regular pythonfinder
     # As the UV folders give the python version and the implementation
     if uv_python_path := get_uv_python_path():
         with os.scandir(uv_python_path) as fld:
             for f in fld:
-                if f.is_dir() and (install := _implementation_from_uv_dir(f)):
+                if (
+                    f.is_dir()
+                    and (install := _implementation_from_uv_dir(f, query_executables))
+                ):
                     yield install

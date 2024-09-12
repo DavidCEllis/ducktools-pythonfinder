@@ -79,6 +79,11 @@ def parse_args(args):
         description="Discover base Python installs",
     )
     parser.add_argument("-V", "--version", action="version", version=__version__)
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Skip Python installs that need to be launched to obtain metadata"
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=False)
 
@@ -121,7 +126,12 @@ def parse_args(args):
     return vals
 
 
-def display_local_installs(min_ver=None, max_ver=None, compatible=None):
+def display_local_installs(
+    min_ver=None,
+    max_ver=None,
+    compatible=None,
+    query_executables=True,
+):
     if min_ver:
         min_ver = tuple(int(i) for i in min_ver.split("."))
     if max_ver:
@@ -129,7 +139,7 @@ def display_local_installs(min_ver=None, max_ver=None, compatible=None):
     if compatible:
         compatible = tuple(int(i) for i in compatible.split("."))
 
-    installs = list_python_installs()
+    installs = list_python_installs(query_executables=query_executables)
     headings = ["Python Version", "Executable Location"]
     max_executable_len = max(
         len(headings[1]), max(len(inst.executable) for inst in installs)
@@ -184,13 +194,13 @@ def display_local_installs(min_ver=None, max_ver=None, compatible=None):
 
 
 def display_remote_binaries(
-        min_ver,
-        max_ver,
-        compatible,
-        all_binaries,
-        system,
-        machine,
-        prerelease
+    min_ver,
+    max_ver,
+    compatible,
+    all_binaries,
+    system,
+    machine,
+    prerelease
 ):
     specs = []
     if min_ver:
@@ -252,7 +262,12 @@ def main():
             except _laz.URLError:
                 print("Could not connect to python.org")
         else:
-            display_local_installs(vals.min, vals.max, vals.compatible)
+            display_local_installs(
+                min_ver=vals.min,
+                max_ver=vals.max,
+                compatible=vals.compatible,
+                query_executables=not vals.fast,
+            )
     else:
         # No arguments to parse
         display_local_installs()
