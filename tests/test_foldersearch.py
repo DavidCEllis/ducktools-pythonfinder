@@ -89,7 +89,7 @@ def test_get_install_details_error():
     ) as run_mock:
         details = get_install_details(fake_details_out.executable)
 
-        run_mock.assert_called_with(
+        run_mock.assert_any_call(
             [fake_details_out.executable, "-"],
             input=details_text,
             capture_output=True,

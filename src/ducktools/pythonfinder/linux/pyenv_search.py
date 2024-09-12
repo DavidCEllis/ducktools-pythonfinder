@@ -45,12 +45,6 @@ _laz = LazyImporter(
 PYTHON_VER_RE = r"\d{1,2}\.\d{1,2}\.\d+[a-z]*\d*"
 PYPY_VER_RE = r"^pypy(?P<pyversion>\d{1,2}\.\d+)-(?P<pypyversion>[\d\.]*)$"
 
-# 'pypy -V' output matcher
-PYPY_V_OUTPUT = (
-    r"(?is)python (?P<python_version>\d+\.\d+\.\d+[a-z]*\d*).*?"
-    r"pypy (?P<pypy_version>\d+\.\d+\.\d+[a-z]*\d*).*"
-)
-
 PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions")
 
 
@@ -60,9 +54,9 @@ def get_pyenv_pythons(
     if not os.path.exists(versions_folder):
         return
 
-    # Sorting puts standard python versions before pypy
+    # Sorting puts standard python versions before alternate implementations
     # This can lead to much faster returns by potentially yielding
-    # the required python version before checking pypy
+    # the required python version before checking pypy/graalpy/micropython
 
     for p in sorted(os.scandir(versions_folder), key=lambda x: x.path):
         executable = os.path.join(p.path, "bin/python")
@@ -70,6 +64,5 @@ def get_pyenv_pythons(
         if os.path.exists(executable):
             if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
                 yield PythonInstall.from_str(p.name, executable)
-            elif _laz.re.fullmatch(PYPY_VER_RE, p.name):
-                if install := get_install_details(executable):
-                    yield install
+            elif install := get_install_details(executable):
+                yield install
