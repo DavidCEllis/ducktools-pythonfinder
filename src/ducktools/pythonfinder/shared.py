@@ -302,7 +302,7 @@ def _implementation_from_uv_dir(
             if query_executables:
                 install = get_install_details(python_path)
         else:
-            if implementation == "cpython":
+            if implementation in {"cpython", "pypy"}:
                 install = PythonInstall.from_str(
                     version=version,
                     executable=python_path,
