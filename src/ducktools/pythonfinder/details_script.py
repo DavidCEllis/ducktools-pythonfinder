@@ -26,7 +26,7 @@ Get the details from a python install as JSON
 """
 import sys
 
-FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
 
 
 def version_str_to_tuple(version):
@@ -37,7 +37,7 @@ def version_str_to_tuple(version):
 
     major, minor, micro, releaselevel, serial = parsed_version.groups()
 
-    if releaselevel == "a":
+    if releaselevel in {"a", "dev"}:
         releaselevel = "alpha"
     elif releaselevel == "b":
         releaselevel = "beta"

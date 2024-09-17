@@ -46,7 +46,7 @@ _laz = LazyImporter(
 )
 
 
-FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
 
 
 def version_str_to_tuple(version):
@@ -57,7 +57,7 @@ def version_str_to_tuple(version):
 
     major, minor, micro, releaselevel, serial = parsed_version.groups()
 
-    if releaselevel == "a":
+    if releaselevel in {"a", "dev"}:
         releaselevel = "alpha"
     elif releaselevel == "b":
         releaselevel = "beta"
@@ -154,7 +154,10 @@ class PythonInstall(Prefab):
             if self.implementation == "cpython":
                 self._implementation_version = self.version
             elif implementation_ver := self.metadata.get(f"{self.implementation}_version"):
-                self._implementation_version = implementation_ver
+                if len(implementation_ver) == 3:
+                    self._implementation_version = tuple([*implementation_ver, "final", 0])  # type: ignore
+                else:
+                    self._implementation_version = implementation_ver
         return self._implementation_version
 
     @property
@@ -256,7 +259,7 @@ def get_install_details(executable: str) -> PythonInstall | None:
     try:
         output = _laz.json.loads(detail_output)
     except _laz.json.JSONDecodeError as e:
-        print(e)
+        print(e, f"{executable=}")
         return None
 
     return PythonInstall.from_json(**output)
