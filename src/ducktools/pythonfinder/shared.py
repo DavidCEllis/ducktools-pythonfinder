@@ -259,7 +259,6 @@ def get_install_details(executable: str) -> PythonInstall | None:
     try:
         output = _laz.json.loads(detail_output)
     except _laz.json.JSONDecodeError as e:
-        print(e, f"{executable=}")
         return None
 
     return PythonInstall.from_json(**output)
