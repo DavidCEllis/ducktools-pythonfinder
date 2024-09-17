@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
 
 import sys
@@ -140,23 +141,16 @@ def display_local_installs(
         compatible = tuple(int(i) for i in compatible.split("."))
 
     installs = list_python_installs(query_executables=query_executables)
-    headings = ["Python Version", "Executable Location"]
-    max_executable_len = max(
-        len(headings[1]), max(len(inst.executable) for inst in installs)
-    )
-    headings_str = f"| {headings[0]} | {headings[1]:<{max_executable_len}s} |"
 
-    print("Discoverable Python Installs")
-    if sys.platform == "win32":
-        print("+ - Listed in the Windows Registry ")
-        print("^ - This is a 32-bit Python install")
-    if sys.platform != "win32":
-        print("[] - This Python install is shadowed by another on Path")
-    print("* - This is the active Python executable used to call this module")
-    print("** - This is the parent Python executable of the venv used to call this module")
-    print()
-    print(headings_str)
-    print(f"| {'-' * len(headings[0])} | {'-' * max_executable_len} |")
+    headings = ["Version", "Executable Location"]
+
+    install_collection: list[tuple[str, str]] = []
+    max_version_len = len(headings[0])
+    max_executable_len = len(headings[1])
+
+    alternate_implementations = False
+
+    # First collect the strings
     for install in installs:
         if min_ver and install.version < min_ver:
             continue
@@ -190,7 +184,35 @@ def display_local_installs(
         if install.shadowed:
             version_str = f"[{version_str}]"
 
-        print(f"| {version_str:>14s} | {install.executable:<{max_executable_len}s} |")
+        if install.implementation != "cpython":
+            alternate_implementations = True
+            version_str = f"({install.implementation_version_str}) {version_str}"
+
+        max_version_len = max(max_version_len, len(version_str))
+        max_executable_len = max(max_executable_len, len(install.executable))
+
+        install_collection.append((version_str, install.executable))
+
+    print("Discoverable Python Installs")
+    print()
+    if alternate_implementations:
+        print("Alternate implementation versions are listed in parentheses")
+
+    if sys.platform == "win32":
+        print("+ - Listed in the Windows Registry ")
+        print("^ - This is a 32-bit Python install")
+    if sys.platform != "win32":
+        print("[] - This Python install is shadowed by another on Path")
+    print("* - This is the active Python executable used to call this module")
+    print("** - This is the parent Python executable of the venv used to call this module")
+    print()
+
+    headings_str = f"| {headings[0]:<{max_version_len}s} | {headings[1]:<{max_executable_len}s} |"
+    print(headings_str)
+    print(f"| {'-' * max_version_len} | {'-' * max_executable_len} |")
+
+    for version_str, executable in install_collection:
+        print(f"| {version_str:>{max_version_len}s} | {executable:<{max_executable_len}s} |")
 
 
 def display_remote_binaries(

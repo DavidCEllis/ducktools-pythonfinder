@@ -131,6 +131,7 @@ class PythonInstall(Prefab):
     implementation: str = "cpython"
     metadata: dict = attribute(default_factory=dict)
     shadowed: bool = False
+    _implementation_version: tuple[int, int, int, str, int] | None = attribute(default=None, private=True)
 
     def __prefab_post_init__(
         self,
@@ -146,6 +147,19 @@ class PythonInstall(Prefab):
     @property
     def version_str(self) -> str:
         return version_tuple_to_str(self.version)
+
+    @property
+    def implementation_version(self) -> tuple[int, int, int, str, int] | None:
+        if self._implementation_version is None:
+            if self.implementation == "cpython":
+                self._implementation_version = self.version
+            elif implementation_ver := self.metadata.get(f"{self.implementation}_version"):
+                self._implementation_version = implementation_ver
+        return self._implementation_version
+
+    @property
+    def implementation_version_str(self) -> str:
+        return version_tuple_to_str(self.implementation_version)
 
     @classmethod
     def from_str(
@@ -302,7 +316,7 @@ def _implementation_from_uv_dir(
             if query_executables:
                 install = get_install_details(python_path)
         else:
-            if implementation in {"cpython", "pypy"}:
+            if implementation in {"cpython"}:
                 install = PythonInstall.from_str(
                     version=version,
                     executable=python_path,

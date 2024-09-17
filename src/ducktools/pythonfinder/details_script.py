@@ -26,6 +26,35 @@ Get the details from a python install as JSON
 """
 import sys
 
+FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+
+
+def version_str_to_tuple(version):
+    # Needed to parse GraalPy versions only available as strings
+    import re
+
+    parsed_version = re.fullmatch(FULL_PY_VER_RE, version)
+
+    major, minor, micro, releaselevel, serial = parsed_version.groups()
+
+    if releaselevel == "a":
+        releaselevel = "alpha"
+    elif releaselevel == "b":
+        releaselevel = "beta"
+    elif releaselevel == "rc":
+        releaselevel = "candidate"
+    else:
+        releaselevel = "final"
+
+    version_tuple = (
+        int(major),
+        int(minor),
+        int(micro) if micro else 0,
+        releaselevel,
+        int(serial if serial != "" else 0),
+    )
+    return version_tuple
+
 
 def get_details():
     try:
@@ -37,7 +66,17 @@ def get_details():
         implementation = platform.python_implementation().lower()
         metadata = {}
     else:
-        if implementation != "cpython":  # pragma: no cover
+        if implementation == "graalpy":
+            # Special case GraalPy as it erroneously reports the CPython target
+            # instead of the Graal versiion
+            try:
+                ver = __graalpython__.get_graalvm_version()
+                metadata = {
+                    "graalpy_version": version_str_to_tuple(ver)
+                }
+            except NameError:
+                metadata = {"{}_version".format(implementation): sys.implementation.version}
+        elif implementation != "cpython":  # pragma: no cover
             metadata = {"{}_version".format(implementation): sys.implementation.version}
         else:
             metadata = {}
