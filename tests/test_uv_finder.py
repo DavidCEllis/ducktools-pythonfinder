@@ -114,3 +114,17 @@ class TestUVReal:
         pythons = list(get_uv_pythons())
         assert len(pythons) == 1
         assert pythons[0].version_str == "3.12.6"
+        assert pythons[0].implementation == "cpython"
+
+    @pytest.mark.uv_python
+    def test_finds_installed_pypy(self, uv_pythondir):
+        subprocess.run(
+            ["uv", "python", "install", "pypy3.10"],
+            check=True,
+        )
+
+        pythons = list(get_uv_pythons())
+        assert len(pythons) == 1
+        assert pythons[0].version >= (3, 10, 14)
+        assert pythons[0].implementation == "pypy"
+        assert pythons[0].implementation_version >= (7, 3, 17)
