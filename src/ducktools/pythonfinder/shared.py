@@ -291,7 +291,7 @@ def get_uv_python_path() -> str | None:
             text=True,
             capture_output=True
         )
-    except _laz.subprocess.CalledProcessError:
+    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
         uv_python_dir = None
     else:
         # remove newline
