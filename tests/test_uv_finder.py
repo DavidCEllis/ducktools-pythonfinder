@@ -90,6 +90,22 @@ class TestUVFakes:
 
             assert pydir is None
 
+    def test_fake_get_uv_python_path_notfound(self, uv_pythondir):
+        # Test the subprocess is called correctly and returned correctly
+        with mock.patch("subprocess.run") as run_mock:
+            run_mock.side_effect = FileNotFoundError("[Errno 2] No such file or directory: 'uv'")
+
+            pydir = get_uv_python_path()
+
+            run_mock.assert_called_once_with(
+                ["uv", "python", "dir"],
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+
+            assert pydir is None
+
 
 @pytest.mark.skipif(get_uv_python_path() is None, reason=UV_REASON)
 class TestUVReal:
