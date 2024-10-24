@@ -88,7 +88,7 @@ def version_tuple_to_str(version_tuple):
     else:
         releaselevel = ""
 
-    if serial == 0:
+    if serial == 0 or not releaselevel:
         serial = ""
     else:
         serial = f"{serial}"
@@ -151,13 +151,14 @@ class PythonInstall(Prefab):
     @property
     def implementation_version(self) -> tuple[int, int, int, str, int] | None:
         if self._implementation_version is None:
-            if self.implementation == "cpython":
-                self._implementation_version = self.version
-            elif implementation_ver := self.metadata.get(f"{self.implementation}_version"):
+            if implementation_ver := self.metadata.get(f"{self.implementation}_version"):
                 if len(implementation_ver) == 3:
                     self._implementation_version = tuple([*implementation_ver, "final", 0])  # type: ignore
                 else:
                     self._implementation_version = implementation_ver
+            else:
+                self._implementation_version = self.version
+
         return self._implementation_version
 
     @property
@@ -273,11 +274,18 @@ def get_folder_pythons(
     with os.scandir(base_folder) as fld:
         for file_path in fld:
             if (
-                not file_path.is_symlink()
-                and file_path.is_file()
+                file_path.is_file()
                 and any(reg.fullmatch(file_path.name) for reg in regexes)
             ):
-                install = get_install_details(file_path.path)
+                p = file_path.path
+                if file_path.is_symlink():
+                    # Might be a venv - look for pyvenv.cfg in parent
+                    fld = os.path.dirname(p)
+                    if os.path.exists(os.path.join(fld, "../pyvenv.cfg")):
+                        continue
+                else:
+                    p = file_path.path
+                install = get_install_details(p)
                 if install:
                     yield install
 
