@@ -273,8 +273,13 @@ def get_folder_pythons(
 
     with os.scandir(base_folder) as fld:
         for file_path in fld:
+            try:
+                is_file = file_path.is_file()
+            except PermissionError:
+                continue
+            
             if (
-                file_path.is_file()
+                is_file
                 and any(reg.fullmatch(file_path.name) for reg in regexes)
             ):
                 p = file_path.path
