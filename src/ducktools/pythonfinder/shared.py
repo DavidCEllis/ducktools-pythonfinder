@@ -88,7 +88,7 @@ def version_tuple_to_str(version_tuple):
     else:
         releaselevel = ""
 
-    if serial == 0:
+    if serial == 0 or not releaselevel:
         serial = ""
     else:
         serial = f"{serial}"
@@ -151,13 +151,14 @@ class PythonInstall(Prefab):
     @property
     def implementation_version(self) -> tuple[int, int, int, str, int] | None:
         if self._implementation_version is None:
-            if self.implementation == "cpython":
-                self._implementation_version = self.version
-            elif implementation_ver := self.metadata.get(f"{self.implementation}_version"):
+            if implementation_ver := self.metadata.get(f"{self.implementation}_version"):
                 if len(implementation_ver) == 3:
                     self._implementation_version = tuple([*implementation_ver, "final", 0])  # type: ignore
                 else:
                     self._implementation_version = implementation_ver
+            else:
+                self._implementation_version = self.version
+
         return self._implementation_version
 
     @property
@@ -270,38 +271,18 @@ def get_folder_pythons(
 ):
     regexes = [_python_exe_regex(name) for name in basenames]
 
-    consumed_paths = set()
-
     with os.scandir(base_folder) as fld:
         for file_path in fld:
             if (
                 file_path.is_file()
                 and any(reg.fullmatch(file_path.name) for reg in regexes)
             ):
+                p = file_path.path
                 if file_path.is_symlink():
                     # Might be a venv - look for pyvenv.cfg in parent
-                    p = file_path.path
                     fld = os.path.dirname(p)
                     if os.path.exists(os.path.join(fld, "../pyvenv.cfg")):
                         continue
-
-                    # One link may hide another
-                    i = 0
-                    endless_link = False
-                    while os.path.islink(p):
-                        i += 1
-                        p = os.readlink(p)
-
-                        # To avoid getting in a potential symlink mess
-                        # Have a limit on how far we will go.
-                        if i >= 10:
-                            endless_link = True
-                            break
-                    if endless_link:
-                        # Not going to try and analyse this symlink
-                        continue
-
-                    print(f"Symlink: {p}")
                 else:
                     p = file_path.path
                 install = get_install_details(p)

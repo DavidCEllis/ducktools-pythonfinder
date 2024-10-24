@@ -184,7 +184,10 @@ def display_local_installs(
         if install.shadowed:
             version_str = f"[{version_str}]"
 
-        if install.implementation != "cpython":
+        if (
+            install.implementation != "cpython"
+            and install.implementation_version != install.version
+        ):
             alternate_implementations = True
             version_str = f"({install.implementation_version_str}) {version_str}"
 
