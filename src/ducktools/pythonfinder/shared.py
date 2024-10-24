@@ -337,10 +337,11 @@ def get_uv_pythons(query_executables=True) -> Iterator[PythonInstall]:
     # This takes some shortcuts over the regular pythonfinder
     # As the UV folders give the python version and the implementation
     if uv_python_path := get_uv_python_path():
-        with os.scandir(uv_python_path) as fld:
-            for f in fld:
-                if (
-                    f.is_dir()
-                    and (install := _implementation_from_uv_dir(f, query_executables))
-                ):
-                    yield install
+        if os.path.exists(uv_python_path):
+            with os.scandir(uv_python_path) as fld:
+                for f in fld:
+                    if (
+                        f.is_dir()
+                        and (install := _implementation_from_uv_dir(f, query_executables))
+                    ):
+                        yield install
