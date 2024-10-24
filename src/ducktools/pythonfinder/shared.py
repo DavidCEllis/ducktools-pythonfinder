@@ -270,14 +270,41 @@ def get_folder_pythons(
 ):
     regexes = [_python_exe_regex(name) for name in basenames]
 
+    consumed_paths = set()
+
     with os.scandir(base_folder) as fld:
         for file_path in fld:
             if (
-                not file_path.is_symlink()
-                and file_path.is_file()
+                file_path.is_file()
                 and any(reg.fullmatch(file_path.name) for reg in regexes)
             ):
-                install = get_install_details(file_path.path)
+                if file_path.is_symlink():
+                    # Might be a venv - look for pyvenv.cfg in parent
+                    p = file_path.path
+                    fld = os.path.dirname(p)
+                    if os.path.exists(os.path.join(fld, "../pyvenv.cfg")):
+                        continue
+
+                    # One link may hide another
+                    i = 0
+                    endless_link = False
+                    while os.path.islink(p):
+                        i += 1
+                        p = os.readlink(p)
+
+                        # To avoid getting in a potential symlink mess
+                        # Have a limit on how far we will go.
+                        if i >= 10:
+                            endless_link = True
+                            break
+                    if endless_link:
+                        # Not going to try and analyse this symlink
+                        continue
+
+                    print(f"Symlink: {p}")
+                else:
+                    p = file_path.path
+                install = get_install_details(p)
                 if install:
                     yield install
 
