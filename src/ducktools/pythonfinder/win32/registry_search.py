@@ -100,20 +100,21 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                                     winreg.CloseKey(install_key)
 
                             python_version: str | None = metadata.get("Version")
-                            # Pyenv puts architecture information in the Version value for some reason
-                            if python_version:
-                                python_version = python_version.split("-")[0]
-
-                            version_tuple = version_str_to_tuple(python_version)
 
                             architecture = metadata.get("SysArchitecture")
 
                             metadata["InWindowsRegistry"] = True
 
-                            if version_tuple >= (3, 13) and "freethreaded" in metadata.get("DisplayName", ""):
-                                metadata["freethreaded"] = True
-
                         if python_path and python_version:
+                            # Pyenv puts architecture information in the Version value for some reason
+                            python_version = python_version.split("-")[0]
+                            version_tuple = version_str_to_tuple(python_version)
+
+                            if (
+                                version_tuple >= (3, 13)
+                                and "freethreaded" in metadata.get("DisplayName", "")
+                            ):
+                                metadata["freethreaded"] = True
                             try:
                                 yield PythonInstall(
                                     version=version_tuple,
