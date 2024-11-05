@@ -72,7 +72,7 @@ def test_mock_versions_folder():
 
         python_versions = list(get_pyenv_pythons())
 
-    assert python_versions == [PythonInstall.from_str(out_ver, out_executable)]
+    assert python_versions == [PythonInstall.from_str(version=out_ver, executable=out_executable)]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
@@ -89,7 +89,7 @@ def test_fs_versions_win(fs):
 
     versions = list(get_pyenv_pythons(tmpdir))
 
-    assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
+    assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe)]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
@@ -106,7 +106,7 @@ def test_32bit_version(fs):
 
     versions = list(get_pyenv_pythons(tmpdir))
 
-    assert versions == [PythonInstall.from_str("3.12.1", py_exe, architecture="32bit")]
+    assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, architecture="32bit")]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
@@ -155,7 +155,7 @@ def test_fs_versions_nix(fs):
 
     versions = list(get_pyenv_pythons(tmpdir))
 
-    assert versions == [PythonInstall.from_str("3.12.1", py_exe)]
+    assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe)]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")

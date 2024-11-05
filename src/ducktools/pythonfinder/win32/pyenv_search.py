@@ -73,7 +73,9 @@ def get_pyenv_pythons(
                 arch = "32bit" if arch == "win32" else "64bit"
                 try:
                     yield PythonInstall.from_str(
-                        version, executable, architecture=arch
+                        version=version,
+                        executable=executable,
+                        architecture=arch,
                     )
                 except ValueError:
                     pass
@@ -81,7 +83,9 @@ def get_pyenv_pythons(
                 version = split_version[0]
                 try:
                     yield PythonInstall.from_str(
-                        version, executable, architecture="64bit"
+                        version=version,
+                        executable=executable,
+                        architecture="64bit",
                     )
                 except ValueError:
                     pass

@@ -75,8 +75,8 @@ def get_pyenv_pythons(
                 if version_tuple >= (3, 13):
                     metadata["freethreaded"] = freethreaded
                 yield PythonInstall(
-                    version_tuple,
-                    executable,
+                    version=version_tuple,
+                    executable=executable,
                     metadata=metadata,
                 )
             elif query_executables and (install := get_install_details(executable)):
