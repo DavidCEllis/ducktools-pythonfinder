@@ -46,7 +46,7 @@ _laz = LazyImporter(
 )
 
 
-FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
 UV_PYTHON_RE = (
     r"(?P<implementation>[a-zA-Z]+)"
@@ -69,7 +69,7 @@ def version_str_to_tuple(version):
         releaselevel = "alpha"
     elif releaselevel == "b":
         releaselevel = "beta"
-    elif releaselevel == "rc":
+    elif releaselevel in {"c", "rc"}:
         releaselevel = "candidate"
     else:
         releaselevel = "final"

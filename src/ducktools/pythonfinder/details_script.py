@@ -26,7 +26,7 @@ Get the details from a python install as JSON
 """
 import sys
 
-FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
+FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
 
 def version_str_to_tuple(version):
@@ -80,6 +80,11 @@ def get_details():
             metadata = {"{}_version".format(implementation): sys.implementation.version}
         else:
             metadata = {}
+            if sys.version_info >= (3, 13):
+                import sysconfig
+                freethreaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+                metadata["freethreaded"] = freethreaded
+
 
     install = dict(
         version=list(sys.version_info),
