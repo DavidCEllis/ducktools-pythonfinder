@@ -31,7 +31,7 @@ Based on PEP 514 registry entries.
 import winreg  # noqa  # pycharm seems to think winreg doesn't exist in python3.12
 from _collections_abc import Iterator
 
-from ..shared import PythonInstall
+from ..shared import PythonInstall, version_str_to_tuple
 
 exclude_companies = {
     "PyLauncher",  # pylauncher is special cased to be ignored
@@ -100,18 +100,24 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                                     winreg.CloseKey(install_key)
 
                             python_version: str | None = metadata.get("Version")
-                            # Pyenv puts architecture information in the Version value for some reason
-                            if python_version:
-                                python_version = python_version.split("-")[0]
 
                             architecture = metadata.get("SysArchitecture")
 
                             metadata["InWindowsRegistry"] = True
 
                         if python_path and python_version:
+                            # Pyenv puts architecture information in the Version value for some reason
+                            python_version = python_version.split("-")[0]
+                            version_tuple = version_str_to_tuple(python_version)
+
+                            if (
+                                version_tuple >= (3, 13)
+                                and "freethreaded" in metadata.get("DisplayName", "")
+                            ):
+                                metadata["freethreaded"] = True
                             try:
-                                yield PythonInstall.from_str(
-                                    version=python_version,
+                                yield PythonInstall(
+                                    version=version_tuple,
                                     executable=python_path,
                                     architecture=architecture,
                                     metadata=metadata,

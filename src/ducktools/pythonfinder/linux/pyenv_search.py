@@ -33,7 +33,7 @@ from _collections_abc import Iterator
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport
 
-from ..shared import PythonInstall, get_install_details
+from ..shared import PythonInstall, get_install_details, FULL_PY_VER_RE, version_str_to_tuple
 
 _laz = LazyImporter(
     [
@@ -41,8 +41,7 @@ _laz = LazyImporter(
     ]
 )
 
-# pyenv folder names
-PYTHON_VER_RE = r"\d{1,2}\.\d{1,2}\.\d+[a-z]*\d*"
+# pyenv folder name for pypy
 PYPY_VER_RE = r"^pypy(?P<pyversion>\d{1,2}\.\d+)-(?P<pypyversion>[\d\.]*)$"
 
 PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions")
@@ -64,7 +63,21 @@ def get_pyenv_pythons(
         executable = os.path.join(p.path, "bin/python")
 
         if os.path.exists(executable):
-            if _laz.re.fullmatch(PYTHON_VER_RE, p.name):
-                yield PythonInstall.from_str(p.name, executable)
+            if p.name.endswith("t"):
+                freethreaded = True
+                version = p.name[:-1]
+            else:
+                freethreaded = False
+                version = p.name
+            if _laz.re.fullmatch(FULL_PY_VER_RE, version):
+                version_tuple = version_str_to_tuple(version)
+                metadata = {}
+                if version_tuple >= (3, 13):
+                    metadata["freethreaded"] = freethreaded
+                yield PythonInstall(
+                    version=version_tuple,
+                    executable=executable,
+                    metadata=metadata,
+                )
             elif query_executables and (install := get_install_details(executable)):
                 yield install

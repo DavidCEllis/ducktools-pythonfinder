@@ -181,6 +181,9 @@ def display_local_installs(
         ):
             version_str = f"**{version_str}"
 
+        if install.metadata.get("freethreaded"):
+            version_str = f"{version_str}t"
+
         if install.shadowed:
             version_str = f"[{version_str}]"
 
