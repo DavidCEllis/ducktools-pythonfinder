@@ -48,6 +48,14 @@ _laz = LazyImporter(
 
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>[a-zA-Z]*)(?P<serial>\d*)"
 
+UV_PYTHON_RE = (
+    r"(?P<implementation>[a-zA-Z]+)"
+    r"-(?P<version>\d+\.\d+\.\d*[a-zA-Z]*\d*)\+?(?P<extra>.*?)?"
+    r"-(?P<platform>\w*)"
+    r"-(?P<arch>\w*)"
+    r"-.*"
+)
+
 
 def version_str_to_tuple(version):
     parsed_version = _laz.re.fullmatch(FULL_PY_VER_RE, version)
@@ -323,25 +331,29 @@ def _implementation_from_uv_dir(
     install: PythonInstall | None = None
 
     if os.path.exists(python_path):
-        try:
-            implementation, version, platform, arch, _ = direntry.name.split("-")
-        except ValueError:
-            # Directory name format has changed
+        if match := _laz.re.fullmatch(UV_PYTHON_RE, direntry.name):
+            implementation, version, extra, platform, arch = match.groups()
+            metadata = {
+                "freethreaded": "freethreaded" in extra,
+            }
+
+            try:
+                if implementation in {"cpython"}:
+                    install = PythonInstall.from_str(
+                        version=version,
+                        executable=python_path,
+                        architecture="32bit" if arch in {"i686", "armv7"} else "64bit",
+                        implementation=implementation,
+                        metadata=metadata
+                    )
+            except ValueError:
+                pass
+
+        if install is None:
+            # Directory name format has changed or this is an alternate implementation
             # Slow backup - ask python itself
             if query_executables:
                 install = get_install_details(python_path)
-        else:
-            if implementation in {"cpython"}:
-                install = PythonInstall.from_str(
-                    version=version,
-                    executable=python_path,
-                    architecture="32bit" if arch in {"i686", "armv7"} else "64bit",
-                    implementation=implementation,
-                )
-            else:
-                # Get additional alternate implementation details
-                if query_executables:
-                    install = get_install_details(python_path)
 
     return install
 

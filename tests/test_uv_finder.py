@@ -22,6 +22,7 @@
 # SOFTWARE.
 
 import os
+import re
 import subprocess
 
 from tempfile import TemporaryDirectory
@@ -32,8 +33,8 @@ import unittest.mock as mock
 import pytest
 
 from ducktools.pythonfinder.shared import (
+    UV_PYTHON_RE,
     get_uv_python_path,
-    _implementation_from_uv_dir,
     get_uv_pythons,
 )
 
@@ -144,3 +145,13 @@ class TestUVReal:
         assert pythons[0].version >= (3, 10, 14)
         assert pythons[0].implementation == "pypy"
         assert pythons[0].implementation_version >= (7, 3, 17)
+
+
+def test_regex_matches():
+    example_312 = "cpython-3.12.7-windows-x86_64-none"
+    match = re.match(UV_PYTHON_RE, example_312)
+    assert match.groups() == ("cpython", "3.12.7", "", "windows", "x86_64")
+
+    example_313t = "cpython-3.13.0+freethreaded-windows-x86_64-none"
+    match = re.match(UV_PYTHON_RE, example_313t)
+    assert match.groups() == ("cpython", "3.13.0", "freethreaded", "windows", "x86_64")
