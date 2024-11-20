@@ -157,12 +157,10 @@ def display_local_installs(
         elif max_ver and install.version > max_ver:
             continue
         elif compatible:
-            mismatch = False
-            for i, val in enumerate(compatible):
-                if val != install.version[i]:
-                    mismatch = True
-                    break
-            if mismatch:
+            if install.version < compatible:
+                continue
+            version_parts = len(compatible) - 1
+            if install.version[:version_parts] > compatible[:-1]:
                 continue
 
         version_str = install.version_str
