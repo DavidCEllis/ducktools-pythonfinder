@@ -34,7 +34,7 @@ from .pyenv_search import get_pyenv_pythons
 def get_path_pythons() -> Iterator[PythonInstall]:
     exe_names = set()
 
-    path_folders = os.environ.get("PATH").split(":")
+    path_folders = os.environ.get("PATH", "").split(":")
     pyenv_root = os.environ.get("PYENV_ROOT")
     uv_root = get_uv_python_path()
 
