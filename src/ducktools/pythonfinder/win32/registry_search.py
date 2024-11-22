@@ -74,13 +74,18 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                     continue
 
                 with winreg.OpenKey(base_key, company) as company_key:
-                    comp_metadata = {}
+                    comp_metadata = {
+                        "Company": company
+                    }
 
                     for name, data, _ in enum_values(company_key):
                         comp_metadata[f"Company{name}"] = data
 
                     for py_keyname in enum_keys(company_key):
-                        metadata = {**comp_metadata}
+                        metadata = {
+                            **comp_metadata,
+                            "Tag": py_keyname,
+                        }
 
                         with winreg.OpenKey(company_key, py_keyname) as py_key:
                             for name, data, _ in enum_values(py_key):
