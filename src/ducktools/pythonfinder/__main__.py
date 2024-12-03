@@ -74,8 +74,42 @@ def stop_autoclose():
         _laz.subprocess.run("pause", shell=True)
 
 
-def parse_args(args):
-    parser = _laz.argparse.ArgumentParser(
+def _get_parser_class():
+    # This class is deferred to avoid the argparse import
+    # if there are no arguments to parse
+
+    class FixedArgumentParser(_laz.argparse.ArgumentParser):
+        """
+        The builtin argument parser uses shutil to figure out the terminal width
+        to display help info. This one replaces the function that calls help info
+        and plugs in a value for width.
+
+        This prevents the unnecessary import.
+        """
+
+        def _get_formatter(self):
+            # Calculate width
+            try:
+                columns = int(os.environ['COLUMNS'])
+            except (KeyError, ValueError):
+                try:
+                    size = os.get_terminal_size()
+                except (AttributeError, ValueError, OSError):
+                    # get_terminal_size unsupported
+                    columns = 80
+                else:
+                    columns = size.columns
+
+            # noinspection PyArgumentList
+            return self.formatter_class(prog=self.prog, width=columns - 2)
+
+    return FixedArgumentParser
+
+
+def get_parser():
+    FixedArgumentParser = _get_parser_class()  # noqa
+
+    parser = FixedArgumentParser(
         prog="ducktools-pythonfinder",
         description="Discover base Python installs",
     )
@@ -122,9 +156,7 @@ def parse_args(args):
         help="Include prerelease versions"
     )
 
-    vals = parser.parse_args(args)
-
-    return vals
+    return parser
 
 
 def display_local_installs(
@@ -270,7 +302,8 @@ def main():
         )
 
     if sys.argv[1:]:
-        vals = parse_args(sys.argv[1:])
+        parser = get_parser()
+        vals = parser.parse_args(sys.argv[1:])
 
         if vals.command == "online":
             system = vals.system if vals.system else _laz.platform.system()
