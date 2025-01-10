@@ -48,13 +48,13 @@ def get_pyenv_pythons(
             if path_base.startswith("pypy"):
                 executable = os.path.join(p.path, "pypy.exe")
                 if os.path.exists(executable):
-                    yield get_install_details(executable)
+                    yield get_install_details(executable, managed_by="pyenv")
                     continue
             elif path_base.startswith("graalpy"):
                 # Graalpy exe in bin subfolder
                 executable = os.path.join(p.path, "bin", "graalpy.exe")
                 if os.path.exists(executable):
-                    yield get_install_details(executable)
+                    yield get_install_details(executable, managed_by="pyenv")
                     continue
 
         # Regular CPython
@@ -76,6 +76,7 @@ def get_pyenv_pythons(
                         version=version,
                         executable=executable,
                         architecture=arch,
+                        managed_by="pyenv",
                     )
                 except ValueError:
                     pass
@@ -86,6 +87,7 @@ def get_pyenv_pythons(
                         version=version,
                         executable=executable,
                         architecture="64bit",
+                        managed_by="pyenv",
                     )
                 except ValueError:
                     pass

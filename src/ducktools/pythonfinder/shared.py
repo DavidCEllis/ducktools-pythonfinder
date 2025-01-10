@@ -137,6 +137,7 @@ class PythonInstall(Prefab):
     executable: str
     architecture: str = "64bit"
     implementation: str = "cpython"
+    managed_by: str = "unknown"
     metadata: dict = attribute(default_factory=dict)
     shadowed: bool = False
     _implementation_version: tuple[int, int, int, str, int] | None = attribute(default=None, private=True)
@@ -180,6 +181,7 @@ class PythonInstall(Prefab):
         executable: str,
         architecture: str = "64bit",
         implementation: str = "cpython",
+        managed_by: str = "unknown",
         metadata: dict | None = None,
     ):
         version_tuple = version_str_to_tuple(version)
@@ -190,16 +192,23 @@ class PythonInstall(Prefab):
             executable=executable,
             architecture=architecture,
             implementation=implementation,
+            managed_by=managed_by,
             metadata=metadata,
         )
 
     @classmethod
-    def from_json(cls, version, executable, architecture, implementation, metadata):
+    def from_json(cls, version, executable, architecture, implementation, metadata, managed_by="unknown"):
         if arch_ver := metadata.get(f"{implementation}_version"):
             metadata[f"{implementation}_version"] = tuple(arch_ver)
 
+        # noinspection PyArgumentList
         return cls(
-            tuple(version), executable, architecture, implementation, metadata  # noqa
+            version=tuple(version),
+            executable=executable,
+            architecture=architecture,
+            implementation=implementation,
+            managed_by=managed_by,
+            metadata=metadata,
         )
 
     def get_pip_version(self) -> str | None:
@@ -229,7 +238,7 @@ def _python_exe_regex(basename: str = "python"):
         return _laz.re.compile(rf"{basename}\d?\.?\d*")
 
 
-def get_install_details(executable: str) -> PythonInstall | None:
+def get_install_details(executable: str, managed_by="unknown") -> PythonInstall | None:
     try:
         source = details.get_source_code()
     except FileNotFoundError:
@@ -270,7 +279,7 @@ def get_install_details(executable: str) -> PythonInstall | None:
     except _laz.json.JSONDecodeError as e:
         return None
 
-    return PythonInstall.from_json(**output)
+    return PythonInstall.from_json(**output, managed_by=managed_by)
 
 
 def get_folder_pythons(
@@ -344,7 +353,8 @@ def _implementation_from_uv_dir(
                         executable=python_path,
                         architecture="32bit" if arch in {"i686", "armv7"} else "64bit",
                         implementation=implementation,
-                        metadata=metadata
+                        metadata=metadata,
+                        managed_by="Astral UV",
                     )
             except ValueError:
                 pass
@@ -354,6 +364,7 @@ def _implementation_from_uv_dir(
             # Slow backup - ask python itself
             if query_executables:
                 install = get_install_details(python_path)
+                install.managed_by = "Astral UV"
 
     return install
 

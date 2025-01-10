@@ -126,6 +126,7 @@ def get_registered_pythons() -> Iterator[PythonInstall]:
                                     executable=python_path,
                                     architecture=architecture,
                                     metadata=metadata,
+                                    managed_by=metadata["Company"],
                                 )
                             except ValueError:
                                 pass
