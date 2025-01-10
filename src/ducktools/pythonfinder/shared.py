@@ -137,7 +137,7 @@ class PythonInstall(Prefab):
     executable: str
     architecture: str = "64bit"
     implementation: str = "cpython"
-    managed_by: str = "unknown"
+    managed_by: str | None = None
     metadata: dict = attribute(default_factory=dict)
     shadowed: bool = False
     _implementation_version: tuple[int, int, int, str, int] | None = attribute(default=None, private=True)
@@ -181,7 +181,7 @@ class PythonInstall(Prefab):
         executable: str,
         architecture: str = "64bit",
         implementation: str = "cpython",
-        managed_by: str = "unknown",
+        managed_by: str | None = None,
         metadata: dict | None = None,
     ):
         version_tuple = version_str_to_tuple(version)
@@ -197,7 +197,7 @@ class PythonInstall(Prefab):
         )
 
     @classmethod
-    def from_json(cls, version, executable, architecture, implementation, metadata, managed_by="unknown"):
+    def from_json(cls, version, executable, architecture, implementation, metadata, managed_by=None):
         if arch_ver := metadata.get(f"{implementation}_version"):
             metadata[f"{implementation}_version"] = tuple(arch_ver)
 
@@ -238,7 +238,7 @@ def _python_exe_regex(basename: str = "python"):
         return _laz.re.compile(rf"{basename}\d?\.?\d*")
 
 
-def get_install_details(executable: str, managed_by="unknown") -> PythonInstall | None:
+def get_install_details(executable: str, managed_by=None) -> PythonInstall | None:
     try:
         source = details.get_source_code()
     except FileNotFoundError:
