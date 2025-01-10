@@ -78,6 +78,7 @@ def get_pyenv_pythons(
                     version=version_tuple,
                     executable=executable,
                     metadata=metadata,
+                    managed_by="pyenv",
                 )
-            elif query_executables and (install := get_install_details(executable)):
+            elif query_executables and (install := get_install_details(executable, managed_by="pyenv")):
                 yield install

@@ -132,6 +132,7 @@ class TestUVReal:
         assert len(pythons) == 1
         assert pythons[0].version_str == "3.12.6"
         assert pythons[0].implementation == "cpython"
+        assert pythons[0].managed_by == "Astral UV"
 
     @pytest.mark.uv_python
     def test_finds_installed_pypy(self, uv_pythondir):
@@ -145,6 +146,7 @@ class TestUVReal:
         assert pythons[0].version >= (3, 10, 14)
         assert pythons[0].implementation == "pypy"
         assert pythons[0].implementation_version >= (7, 3, 17)
+        assert pythons[0].managed_by == "Astral UV"
 
 
 def test_regex_matches():
