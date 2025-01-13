@@ -20,11 +20,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import sys
+
 from pathlib import Path
 
 import pytest
 
 from ducktools.pythonfinder import details_script
+from ducktools.pythonfinder.shared import get_install_details
 
 
 @pytest.fixture(scope="session")
@@ -35,6 +38,26 @@ def sources_folder():
 @pytest.fixture
 def uses_details_script(fs):
     fs.add_real_file(details_script.__file__)
+
+
+@pytest.fixture(scope="session")
+def this_python():
+    if sys.platform == "win32":
+        py_exe = Path(sys.base_prefix) / "python.exe"
+    else:
+        py_exe = Path(sys.base_prefix) / "bin" / "python"
+
+    return get_install_details(str(py_exe))
+
+
+@pytest.fixture(scope="session")
+def this_venv():
+    if sys.platform == "win32":
+        exe = sys.executable
+    else:
+        exe = str(Path(sys.executable).with_name("python"))
+    venv = get_install_details(exe)
+    return venv
 
 
 def pytest_addoption(parser):

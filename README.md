@@ -96,6 +96,17 @@ PythonInstall(version=(3, 8, 10, 'final', 0), executable='~\\.pyenv\\pyenv-win\\
 PythonInstall(version=(3, 13, 0, 'candidate', 1), executable='~\\.pyenv\\pyenv-win\\versions\\3.13.0rc1\\python.exe', architecture='64bit', implementation='cpython', metadata={}, shadowed=False)```
 ```
 
+### Finding venvs ###
+
+There is now a submodule to search for virtual environments.
+
+```python
+from ducktools.pythonfinder.venv import list_python_venvs
+
+for venv in list_python_venvs():
+    print(venv.executable)
+```
+
 ### Python.org search ###
 
 Python.org searches are handled by the `ducktools.pythonfinder.pythonorg_search` module.
