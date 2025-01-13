@@ -103,6 +103,9 @@ class PythonVEnv(Prefab):
                 f"Parent Python at \"{self.parent_executable}\" does not exist."
             )
 
+        # Should probably use sys.executable and have pip as a dependency
+        # We would need to look at possibly changing how ducktools-env works for that however.
+
         data = _laz.run(
             [
                 self.parent_executable,
