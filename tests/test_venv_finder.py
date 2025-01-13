@@ -77,7 +77,10 @@ def test_local_found(with_venvs):
 
 
 def test_all_found(with_venvs):
-    venvs = list_python_venvs(base_dir=with_venvs, recursive=True)
+    venvs = sorted(
+        list_python_venvs(base_dir=with_venvs, recursive=True),
+        key=lambda x: x.folder
+    )
 
     assert len(venvs) == 3
     assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, ".venv"))
