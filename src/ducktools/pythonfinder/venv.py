@@ -75,7 +75,7 @@ class PythonVEnv(Prefab):
         if sys.platform == "win32":
             return os.path.join(self.parent_path, "python.exe")
         else:
-            return os.path.join(self.parent_path, "bin", "python")
+            return os.path.join(self.parent_path, "python")
 
     @property
     def parent_exists(self) -> bool:
