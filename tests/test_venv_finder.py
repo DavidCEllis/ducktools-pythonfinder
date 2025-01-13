@@ -21,8 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os
+import subprocess
+import sys
 import tempfile
-import venv
 
 from ducktools.pythonfinder.venv import list_python_venvs
 
@@ -32,12 +33,28 @@ import pytest
 @pytest.fixture(scope="module")
 def with_venvs():
     with tempfile.TemporaryDirectory() as tmpdir:
-        # base directory venv
-        builder = venv.EnvBuilder(with_pip=False)
+        # We can't actually use venv directly here as
+        # Older python on linux makes invalid venvs
+        if sys.platform == "win32":
+            python_exe = os.path.join(sys.base_prefix, "python.exe")
+        else:
+            python_exe = os.path.join(sys.base_prefix, "bin", "python")
 
-        builder.create(os.path.join(tmpdir, ".venv"))
-        builder.create(os.path.join(tmpdir, "subfolder/.venv"))
-        builder.create(os.path.join(tmpdir, "subfolder/subsubfolder/env"))
+        def make_venv(pth):
+            subprocess.run(
+                [
+                    python_exe,
+                    "-m", "venv",
+                    "--without-pip",
+                    os.path.join(tmpdir, pth),
+                ],
+                check=True,
+                capture_output=True
+            )
+
+        make_venv(".venv")
+        make_venv("subfolder/.venv")
+        make_venv("subfolder/subsubfolder/env")
 
         assert os.path.exists(os.path.join(tmpdir, ".venv"))
 
@@ -68,7 +85,7 @@ def test_all_found(with_venvs):
     assert os.path.samefile(venvs[2].folder, os.path.join(with_venvs, "subfolder/subsubfolder/env"))
 
 
-def test_found_parent(with_venvs, this_python):
+def test_found_parent(with_venvs, this_python, this_venv):
     venv_ex = list_python_venvs(base_dir=with_venvs, recursive=False)[0]
 
     assert os.path.samefile(this_python.executable, venv_ex.parent_executable)
@@ -90,6 +107,9 @@ def test_found_parent_cache(with_venvs, this_python):
 
 def test_empty_packages(with_venvs):
     venv_ex = list_python_venvs(base_dir=with_venvs, recursive=False)[0]
+
+    assert os.path.exists(venv_ex.parent_executable)
+    assert os.path.exists(venv_ex.executable)
 
     packages = venv_ex.list_packages()
     assert packages == []

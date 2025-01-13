@@ -29,6 +29,7 @@ import pytest
 from ducktools.pythonfinder import details_script
 from ducktools.pythonfinder.shared import get_install_details
 
+
 @pytest.fixture(scope="session")
 def sources_folder():
     return Path(__file__).parent / "sources"
@@ -47,6 +48,16 @@ def this_python():
         py_exe = Path(sys.base_prefix) / "bin" / "python"
 
     return get_install_details(str(py_exe))
+
+
+@pytest.fixture(scope="session")
+def this_venv():
+    if sys.platform == "win32":
+        exe = sys.executable
+    else:
+        exe = str(Path(sys.executable).with_name("python"))
+    venv = get_install_details(exe)
+    return venv
 
 
 def pytest_addoption(parser):

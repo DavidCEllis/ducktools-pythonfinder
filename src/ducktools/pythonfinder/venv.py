@@ -192,5 +192,5 @@ def get_python_venvs(base_dir=None, recursive=True):
             )
 
 
-def list_python_venvs(base_dir=None, recursive=True):
+def list_python_venvs(base_dir=None, recursive=True) -> list[PythonVEnv]:
     return list(get_python_venvs(base_dir=base_dir, recursive=recursive))
