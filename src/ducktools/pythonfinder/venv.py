@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
+
 import os
 import sys
 
@@ -39,7 +41,7 @@ _laz = LazyImporter(
     [
         ModuleImport("re"),
         ModuleImport("json"),
-        FromImport("glob", "iglob"),
+        FromImport("pathlib", "Path"),
         FromImport("subprocess", "run"),
     ]
 )
@@ -135,17 +137,16 @@ class PythonVEnv(Prefab):
 def get_python_venvs(base_dir=None, recursive=True):
     base_dir = os.getcwd() if base_dir is None else base_dir
 
-    pattern = os.path.join(
-        base_dir,
-        "**",
-        VENV_CONFIG_NAME,
-    )
+    if recursive:
+        glob_call = _laz.Path(base_dir).glob(f"**/{VENV_CONFIG_NAME}")
+    else:
+        glob_call = _laz.Path(base_dir).glob(f"*/{VENV_CONFIG_NAME}")
 
-    for conf in _laz.iglob(pattern, recursive=recursive, include_hidden=True):
+    for conf in glob_call:
         parent_path, version_str = None, None
-        venv_base = os.path.dirname(conf)
+        venv_base = conf.parent
 
-        with open(conf) as f:
+        with conf.open() as f:
             for line in f:
                 key, value = (item.strip() for item in line.split("="))
 
