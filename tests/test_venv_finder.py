@@ -21,11 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os
-import sys
 import tempfile
 import venv
 
-from ducktools.pythonfinder.shared import get_install_details
 from ducktools.pythonfinder.venv import list_python_venvs
 
 import pytest
