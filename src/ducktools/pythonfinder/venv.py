@@ -226,13 +226,19 @@ def get_python_venvs(base_dir=None, recursive=False, search_parent_folders=False
             search_folders.extend(base_dir.parents)
 
     for f in search_folders:
-        for conf in f.glob(pattern):
-            try:
-                env = PythonVEnv.from_cfg(conf)
-            except InvalidVEnvError:
-                continue
+        try:
+            for conf in f.glob(pattern):
+                try:
+                    env = PythonVEnv.from_cfg(conf)
+                except InvalidVEnvError:
+                    continue
 
-            yield env
+                yield env
+        except OSError as e:
+            # MacOS can error on searching up folders with an invalid argument
+            # On Python 3.11 or earlier.
+            if e.errno == 22:
+                continue
 
 
 def list_python_venvs(
