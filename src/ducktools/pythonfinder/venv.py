@@ -55,6 +55,10 @@ VIRTUALENV_PY_VER_RE = (
 )
 
 
+class InvalidVEnvError(Exception):
+    pass
+
+
 class PythonPackage(Prefab):
     name: str
     version: str
@@ -133,20 +137,18 @@ class PythonVEnv(Prefab):
 
         return packages
 
+    @classmethod
+    def from_cfg(cls, cfg_path):
+        """
+        Get a PythonVEnv instance from the path to a config file
 
-def get_python_venvs(base_dir=None, recursive=True):
-    base_dir = os.getcwd() if base_dir is None else base_dir
-
-    if recursive:
-        glob_call = _laz.Path(base_dir).glob(f"**/{VENV_CONFIG_NAME}")
-    else:
-        glob_call = _laz.Path(base_dir).glob(f"*/{VENV_CONFIG_NAME}")
-
-    for conf in glob_call:
+        :param cfg_path:
+        :return:
+        """
         parent_path, version_str = None, None
-        venv_base = conf.parent
+        venv_base = cfg_path.parent
 
-        with conf.open() as f:
+        with cfg_path.open() as f:
             for line in f:
                 key, value = (item.strip() for item in line.split("="))
 
@@ -160,14 +162,13 @@ def get_python_venvs(base_dir=None, recursive=True):
                     break
             else:
                 # Not a valid venv, ignore
-                continue
+                raise InvalidVEnvError(f"Path and version not defined in {cfg_path}")
 
         if sys.platform == "win32":
             venv_exe = os.path.join(venv_base, "Scripts", "python.exe")
         else:
             venv_exe = os.path.join(venv_base, "bin", "python")
 
-        version_tuple = None
         try:
             version_tuple = version_str_to_tuple(version_str)
         except ValueError:  # pragma: no cover
@@ -182,15 +183,77 @@ def get_python_venvs(base_dir=None, recursive=True):
                     releaselevel,
                     int(serial if serial != "" else 0),
                 )
+            else:
+                raise InvalidVEnvError(
+                    f"Could not determine version from venv version string {version_str}"
+                )
 
-        if version_tuple is not None:
-            yield PythonVEnv(
-                folder=venv_base,
-                executable=venv_exe,
-                version=version_tuple,
-                parent_path=parent_path
-            )
+        return cls(
+            folder=venv_base,
+            executable=venv_exe,
+            version=version_tuple,
+            parent_path=parent_path
+        )
 
 
-def list_python_venvs(base_dir=None, recursive=True) -> list[PythonVEnv]:
-    return list(get_python_venvs(base_dir=base_dir, recursive=recursive))
+def get_python_venvs(base_dir=None, recursive=False, search_parent_folders=False):
+    """
+    Yield discoverable python virtual environment information
+
+    If recursive=True then search_parent_folders is ignored.
+
+    If you're in a project directory and are looking for a potential venv
+    search_parent_folders=True will search parents and yield installs discovered.
+
+    If you're in a folder of source trees and want to find venvs inside any subfolders
+    then use recursive=True.
+
+    :param base_dir: Base directory to search venvs
+    :param recursive: Also check subfolders of the base directory
+    :param search_parent_folders: Also search parent folders
+    :yield: PythonVEnv details.
+    """
+    base_dir = _laz.Path.cwd() if base_dir is None else _laz.Path(base_dir)
+
+    search_folders = [base_dir]
+
+    # Recursive searches don't also search parent folders.
+    if recursive:
+        pattern = f"**/{VENV_CONFIG_NAME}"
+    else:
+        pattern = f"*/{VENV_CONFIG_NAME}"
+        if search_parent_folders:
+            search_folders.extend(base_dir.parents)
+
+    for f in search_folders:
+        for conf in f.glob(pattern):
+            try:
+                env = PythonVEnv.from_cfg(conf)
+            except InvalidVEnvError:
+                continue
+
+            yield env
+
+
+def list_python_venvs(
+    base_dir=None,
+    recursive=False,
+    search_parent_folders=False,
+) -> list[PythonVEnv]:
+    """
+    Get a list of discoverable python virtual environment information
+
+    If recursive=True then search_parent_folders is ignored.
+
+    :param base_dir: Base directory to search venvs
+    :param recursive: Also check subfolders of the base directory
+    :param search_parent_folders: Also search parent folders
+    :returns: List of Python VEnv details.
+    """
+    return list(
+        get_python_venvs(
+            base_dir=base_dir,
+            recursive=recursive,
+            search_parent_folders=search_parent_folders,
+        )
+    )
