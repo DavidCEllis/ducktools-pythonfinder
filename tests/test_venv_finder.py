@@ -76,6 +76,13 @@ def test_local_found(with_venvs):
     assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, ".venv"))
 
 
+def test_found_in_parent(with_venvs):
+    venvs = list_python_venvs(base_dir=os.path.join(with_venvs, "subfolder"), search_parent_folders=True)
+
+    assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, "subfolder/.venv"))
+    assert os.path.samefile(venvs[1].folder, os.path.join(with_venvs, ".venv"))
+
+
 def test_all_found(with_venvs):
     venvs = sorted(
         list_python_venvs(base_dir=with_venvs, recursive=True),
