@@ -76,6 +76,13 @@ def test_local_found(with_venvs):
     assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, ".venv"))
 
 
+def test_parent_not_always_searched(with_venvs):
+    venvs = list_python_venvs(base_dir=os.path.join(with_venvs, "subfolder"), search_parent_folders=False)
+
+    assert len(venvs) == 1
+    assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, "subfolder/.venv"))
+
+
 def test_found_in_parent(with_venvs):
     venvs = list_python_venvs(base_dir=os.path.join(with_venvs, "subfolder"), search_parent_folders=True)
 
@@ -86,6 +93,22 @@ def test_found_in_parent(with_venvs):
 def test_all_found(with_venvs):
     venvs = sorted(
         list_python_venvs(base_dir=with_venvs, recursive=True),
+        key=lambda x: x.folder
+    )
+
+    assert len(venvs) == 3
+    assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, ".venv"))
+    assert os.path.samefile(venvs[1].folder, os.path.join(with_venvs, "subfolder/.venv"))
+    assert os.path.samefile(venvs[2].folder, os.path.join(with_venvs, "subfolder/subsubfolder/env"))
+
+
+def test_recursive_parents(with_venvs):
+    venvs = sorted(
+        list_python_venvs(
+            base_dir=os.path.join(with_venvs, "subfolder"),
+            recursive=True,
+            search_parent_folders=True,
+        ),
         key=lambda x: x.folder
     )
 
