@@ -200,7 +200,8 @@ def get_python_venvs(base_dir=None, recursive=False, search_parent_folders=False
     """
     Yield discoverable python virtual environment information
 
-    If recursive=True then search_parent_folders is ignored.
+    If recursive=True and search_parent_folders=True *only* the current working
+    directory will be searched recursively. Parent folders will not be searched recursively
 
     If you're in a project directory and are looking for a potential venv
     search_parent_folders=True will search parents and yield installs discovered.
@@ -215,30 +216,34 @@ def get_python_venvs(base_dir=None, recursive=False, search_parent_folders=False
     """
     base_dir = _laz.Path.cwd() if base_dir is None else _laz.Path(base_dir)
 
-    search_folders = [base_dir]
+    cwd_pattern = pattern = f"*/{VENV_CONFIG_NAME}"
 
-    # Recursive searches don't also search parent folders.
     if recursive:
-        pattern = f"**/{VENV_CONFIG_NAME}"
-    else:
-        pattern = f"*/{VENV_CONFIG_NAME}"
-        if search_parent_folders:
-            search_folders.extend(base_dir.parents)
+        # Only search cwd recursively, parents are searched non-recursively
+        cwd_pattern = "*" + pattern
 
-    for f in search_folders:
+    for conf in base_dir.glob(cwd_pattern):
         try:
-            for conf in f.glob(pattern):
-                try:
-                    env = PythonVEnv.from_cfg(conf)
-                except InvalidVEnvError:
-                    continue
+            env = PythonVEnv.from_cfg(conf)
+        except InvalidVEnvError:
+            continue
+        yield env
 
-                yield env
-        except OSError as e:
-            # MacOS can error on searching up folders with an invalid argument
-            # On Python 3.11 or earlier.
-            if e.errno == 22:
-                continue
+    if search_parent_folders:
+        # Search parent folders
+        for fld in base_dir.parents:
+            try:
+                for conf in fld.glob(pattern):
+                    try:
+                        env = PythonVEnv.from_cfg(conf)
+                    except InvalidVEnvError:
+                        continue
+                    yield env
+            except OSError as e:
+                # MacOS can error on searching up folders with an invalid argument
+                # On Python 3.11 or earlier.
+                if e.errno == 22:
+                    continue
 
 
 def list_python_venvs(
