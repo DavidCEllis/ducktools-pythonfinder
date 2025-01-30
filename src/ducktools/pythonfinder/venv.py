@@ -31,7 +31,7 @@ import os
 import sys
 
 
-from ducktools.classbuilder.prefab import Prefab
+from ducktools.classbuilder.prefab import Prefab, attribute
 from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 
 from .shared import (
@@ -46,6 +46,7 @@ _laz = LazyImporter(
     [
         ModuleImport("re"),
         ModuleImport("json"),
+        ModuleImport("subprocess"),
         FromImport("pathlib", "Path"),
         FromImport("subprocess", "run"),
     ]
@@ -74,6 +75,7 @@ class PythonVEnv(Prefab):
     executable: str
     version: tuple[int, int, int, str, int]
     parent_path: str
+    _parent_executable: str | None = attribute(default=None, repr=False)
 
     @property
     def version_str(self) -> str:
@@ -81,10 +83,34 @@ class PythonVEnv(Prefab):
 
     @property
     def parent_executable(self) -> str:
-        if sys.platform == "win32":
-            return os.path.join(self.parent_path, "python.exe")
-        else:
-            return os.path.join(self.parent_path, "python")
+        if self._parent_executable is None:
+            # Guess the parent executable file
+            if sys.platform == "win32":
+                parent_exe = os.path.join(self.parent_path, "python.exe")
+            else:
+                parent_exe = os.path.join(self.parent_path, "python")
+
+            if not os.path.exists(parent_exe):
+                try:
+                    pyout = _laz.run(
+                        [
+                            self.executable,
+                            "-c",
+                            "from sysconfig import get_config_var; print(get_config_var('EXENAME'))",
+                        ],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
+                except _laz.subprocess.CalledProcessError:
+                    pass
+                else:
+                    if out_exe := pyout.stdout.strip():
+                        parent_exe = os.path.join(self.parent_path, os.path.basename(out_exe))
+
+            self._parent_executable = parent_exe
+
+        return self._parent_executable
 
     @property
     def parent_exists(self) -> bool:
@@ -150,7 +176,7 @@ class PythonVEnv(Prefab):
         :param cfg_path: Path to a virtualenv config file
         :return: PythonVEnv with details relative to that config file
         """
-        parent_path, version_str = None, None
+        parent_path, version_str, parent_exe = None, None, None
         venv_base = os.path.dirname(cfg_path)
 
         with open(cfg_path, 'r') as f:
@@ -162,12 +188,15 @@ class PythonVEnv(Prefab):
                 elif key in {"version", "version_info"}:
                     # venv and uv use different key names :)
                     version_str = value
+                elif key == "executable":
+                    parent_exe = value
 
-                if parent_path and version_str:
+                if parent_path and version_str and parent_exe:
                     break
-            else:
-                # Not a valid venv, ignore
-                raise InvalidVEnvError(f"Path and version not defined in {cfg_path}")
+
+            if parent_path is None or version_str is None:
+                # Not a valid venv
+                raise InvalidVEnvError(f"Path or version not defined in {cfg_path}")
 
         if sys.platform == "win32":
             venv_exe = os.path.join(venv_base, "Scripts", "python.exe")
@@ -198,6 +227,7 @@ class PythonVEnv(Prefab):
             executable=venv_exe,
             version=version_tuple,
             parent_path=parent_path,
+            _parent_executable=parent_exe,
         )
 
 
