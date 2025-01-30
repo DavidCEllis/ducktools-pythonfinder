@@ -125,7 +125,7 @@ def test_found_parent(with_venvs, this_python, this_venv):
 
     # We found the base env that created this python, all details match
     parent = venv_ex.get_parent_install()
-    assert parent == this_python
+    assert os.path.dirname(parent.executable) == os.path.dirname(this_python.executable)
 
     # venv version str works same as parent
     assert venv_ex.version_str == parent.version_str

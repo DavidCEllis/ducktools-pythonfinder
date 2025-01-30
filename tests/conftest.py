@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os.path
 import sys
 import sysconfig
 
@@ -43,10 +44,21 @@ def uses_details_script(fs):
 
 @pytest.fixture(scope="session")
 def this_python():
-    # Incorrect deprecation warning from PyCharm
-    # noinspection PyDeprecation
-    py_exe = sysconfig.get_config_var("EXENAME")
-    return get_install_details(py_exe)
+    config_exe = sysconfig.get_config_var("EXENAME")
+
+    if config_exe:
+        exename = os.path.basename(sysconfig.get_config_var("EXENAME"))
+    elif sys.platform == "win32":
+        exename = "python.exe"
+    else:
+        exename = "python"
+
+    if sys.platform == "win32":
+        py_exe = Path(sys.base_prefix) / exename
+    else:
+        py_exe = Path(sys.base_prefix) / "bin" / exename
+
+    return get_install_details(str(py_exe))
 
 
 @pytest.fixture(scope="session")

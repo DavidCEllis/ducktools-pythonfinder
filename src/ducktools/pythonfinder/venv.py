@@ -105,7 +105,8 @@ class PythonVEnv(Prefab):
                 except _laz.subprocess.CalledProcessError:
                     pass
                 else:
-                    parent_exe = pyout.stdout.strip()
+                    if out_exe := pyout.stdout.strip():
+                        parent_exe = os.path.join(self.parent_path, os.path.basename(out_exe))
 
             self._parent_executable = parent_exe
 
