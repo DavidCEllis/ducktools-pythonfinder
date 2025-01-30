@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import sys
+import sysconfig
 
 from pathlib import Path
 
@@ -42,12 +43,10 @@ def uses_details_script(fs):
 
 @pytest.fixture(scope="session")
 def this_python():
-    if sys.platform == "win32":
-        py_exe = Path(sys.base_prefix) / "python.exe"
-    else:
-        py_exe = Path(sys.base_prefix) / "bin" / "python"
-
-    return get_install_details(str(py_exe))
+    # Incorrect deprecation warning from PyCharm
+    # noinspection PyDeprecation
+    py_exe = sysconfig.get_config_var("EXENAME")
+    return get_install_details(py_exe)
 
 
 @pytest.fixture(scope="session")
