@@ -22,6 +22,11 @@
 # SOFTWARE.
 from __future__ import annotations
 
+try:
+    from _collections_abc import Iterable
+except ImportError:
+    from collections.abc import Iterable
+
 import os
 import sys
 
@@ -103,7 +108,7 @@ class PythonVEnv(Prefab):
 
         return install
 
-    def list_packages(self):
+    def list_packages(self) -> list[PythonPackage]:
         if not self.parent_exists:
             raise FileNotFoundError(
                 f"Parent Python at \"{self.parent_executable}\" does not exist."
@@ -138,17 +143,17 @@ class PythonVEnv(Prefab):
         return packages
 
     @classmethod
-    def from_cfg(cls, cfg_path):
+    def from_cfg(cls, cfg_path: str | os.PathLike) -> PythonVEnv:
         """
         Get a PythonVEnv instance from the path to a config file
 
-        :param cfg_path:
-        :return:
+        :param cfg_path: Path to a virtualenv config file
+        :return: PythonVEnv with details relative to that config file
         """
         parent_path, version_str = None, None
-        venv_base = cfg_path.parent
+        venv_base = os.path.dirname(cfg_path)
 
-        with cfg_path.open() as f:
+        with open(cfg_path, 'r') as f:
             for line in f:
                 key, value = (item.strip() for item in line.split("="))
 
@@ -192,11 +197,15 @@ class PythonVEnv(Prefab):
             folder=venv_base,
             executable=venv_exe,
             version=version_tuple,
-            parent_path=parent_path
+            parent_path=parent_path,
         )
 
 
-def get_python_venvs(base_dir=None, recursive=False, search_parent_folders=False):
+def get_python_venvs(
+    base_dir: str | os.PathLike | None = None,
+    recursive: bool = False,
+    search_parent_folders: bool = False
+) -> Iterable[PythonVEnv]:
     """
     Yield discoverable python virtual environment information
 
@@ -247,9 +256,9 @@ def get_python_venvs(base_dir=None, recursive=False, search_parent_folders=False
 
 
 def list_python_venvs(
-    base_dir=None,
-    recursive=False,
-    search_parent_folders=False,
+    base_dir: str | os.PathLike | None = None,
+    recursive: bool = False,
+    search_parent_folders: bool = False,
 ) -> list[PythonVEnv]:
     """
     Get a list of discoverable python virtual environment information
