@@ -287,8 +287,8 @@ def get_python_venvs(
             except OSError as e:
                 # MacOS can error on searching up folders with an invalid argument
                 # On Python 3.11 or earlier.
-                if e.errno == 22:
-                    continue
+                if e.errno != 22:
+                    raise
 
 
 def list_python_venvs(
