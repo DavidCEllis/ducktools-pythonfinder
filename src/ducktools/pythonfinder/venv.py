@@ -85,18 +85,24 @@ class PythonVEnv(Prefab):
     def parent_executable(self) -> str:
         if self._parent_executable is None:
             # Guess the parent executable file
+            parent_exe = None
             if sys.platform == "win32":
                 parent_exe = os.path.join(self.parent_path, "python.exe")
             else:
-                parent_exe = os.path.join(self.parent_path, "python")
+                # try with additional numbers in order eg: python313, python3, python
+                for i in reversed(range(2)):
+                    version_part = "".join(str(v) for v in self.version[:i])
+                    parent_exe = os.path.join(self.parent_path, f"python{version_part}")
+                    if os.path.exists(parent_exe):
+                        break
 
-            if not os.path.exists(parent_exe):
+            if not (parent_exe and os.path.exists(parent_exe)):
                 try:
                     pyout = _laz.run(
                         [
                             self.executable,
                             "-c",
-                            "from sysconfig import get_config_var; print(get_config_var('EXENAME'))",
+                            "import sys; sys.stdout.write(getattr(sys, '_base_executable', ''))",
                         ],
                         capture_output=True,
                         text=True,
@@ -105,7 +111,7 @@ class PythonVEnv(Prefab):
                 except (_laz.subprocess.CalledProcessError, FileNotFoundError):
                     pass
                 else:
-                    if out_exe := pyout.stdout.strip():
+                    if out_exe := pyout.stdout:
                         parent_exe = os.path.join(self.parent_path, os.path.basename(out_exe))
 
             self._parent_executable = parent_exe
