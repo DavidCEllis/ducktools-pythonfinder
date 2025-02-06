@@ -1,7 +1,7 @@
 # ducktools-pythonfinder
 # MIT License
 # 
-# Copyright (c) 2013-2014 David C Ellis
+# Copyright (c) 2023-2025 David C Ellis
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,9 @@ _laz = LazyImporter(
         ModuleImport("subprocess"),
         FromImport("pathlib", "Path"),
         FromImport("subprocess", "run"),
-    ]
+        FromImport(".", "package_list_script"),
+    ],
+    globs=globals()
 )
 
 VENV_CONFIG_NAME = "pyvenv.cfg"
@@ -146,30 +148,21 @@ class PythonVEnv(Prefab):
                 f"Parent Python at \"{self.parent_executable}\" does not exist."
             )
 
-        # Should probably use sys.executable and have pip as a dependency
-        # We would need to look at possibly changing how ducktools-env works for that however.
+        package_list_script = _laz.package_list_script.__file__
 
         data = _laz.run(
-            [
-                self.parent_executable,
-                "-m", "pip",
-                "--python", self.executable,
-                "list",
-                "--format", "json"
-            ],
+            [self.executable, package_list_script],
             capture_output=True,
             text=True,
             check=True,
         )
 
-        raw_packages = _laz.json.loads(data.stdout)
+        raw_packages = data.stdout.split("\n")
 
         packages = [
-            PythonPackage(
-                name=p["name"],
-                version=p["version"],
-            )
+            PythonPackage(*p.split("=="))
             for p in raw_packages
+            if p
         ]
 
         return packages
