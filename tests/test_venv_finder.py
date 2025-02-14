@@ -127,8 +127,9 @@ def test_found_parent(with_venvs, this_python, this_venv):
     parent = venv_ex.get_parent_install()
     assert os.path.dirname(parent.executable) == os.path.dirname(this_python.executable)
 
-    # venv version str works same as parent
-    assert venv_ex.version_str == parent.version_str
+    # venvs created by the venv module don't record prerelease details in the version
+    # That's not my fault that's venv!
+    assert venv_ex.version[:3] == parent.version[:3]
 
 
 def test_found_parent_cache(with_venvs, this_python):
