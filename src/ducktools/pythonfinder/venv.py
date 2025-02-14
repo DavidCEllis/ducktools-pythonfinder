@@ -175,27 +175,21 @@ class PythonVEnv(Prefab):
         :param cfg_path: Path to a virtualenv config file
         :return: PythonVEnv with details relative to that config file
         """
-        parent_path, version_str, parent_exe = None, None, None
         venv_base = os.path.dirname(cfg_path)
 
         with open(cfg_path, 'r') as f:
+            conf = {}
             for line in f:
-                key, value = (item.strip() for item in line.split("="))
+                key, _, value = [item.strip() for item in line.partition("=")]
+                conf[key] = value
 
-                if key == "home":
-                    parent_path = value
-                elif key in {"version", "version_info"}:
-                    # venv and uv use different key names :)
-                    version_str = value
-                elif key == "executable":
-                    parent_exe = value
+        parent_path = conf.get("home")
+        version_str = conf.get("version", conf.get("version_info"))
+        parent_exe = conf.get("executable", conf.get("base-executable"))
 
-                if parent_path and version_str and parent_exe:
-                    break
-
-            if parent_path is None or version_str is None:
-                # Not a valid venv
-                raise InvalidVEnvError(f"Path or version not defined in {cfg_path}")
+        if parent_path is None or version_str is None:
+            # Not a valid venv
+            raise InvalidVEnvError(f"Path or version not defined in {cfg_path}")
 
         if sys.platform == "win32":
             venv_exe = os.path.join(venv_base, "Scripts", "python.exe")
