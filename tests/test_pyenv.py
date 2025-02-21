@@ -24,7 +24,6 @@
 import sys
 import os
 import os.path
-import subprocess
 import textwrap
 import types
 from pathlib import Path
@@ -82,20 +81,23 @@ def test_mock_versions_folder():
 
     out_ver = "3.12.1"
     if sys.platform == "win32":
-        versions_folder = os.path.join("c:", "fake", "versions", "folder")
+        versions_folder = os.path.join("c:", "fake", "versions")
         out_executable = os.path.join(versions_folder, out_ver, "python.exe")
     else:
-        versions_folder = "~/fake/versions/folder"
+        versions_folder = "~/fake/versions"
         out_executable = os.path.join(versions_folder, out_ver, "bin/python")
 
     mock_dir_entry.name = out_ver
     mock_dir_entry.path = os.path.join(versions_folder, out_ver)
 
-    with patch("os.path.exists") as exists_mock, patch("os.scandir") as scandir_mock:
+    with (
+        patch("os.path.exists") as exists_mock,
+        patch("os.scandir") as scandir_mock,
+    ):
         exists_mock.return_value = True
         scandir_mock.return_value = iter([mock_dir_entry])
 
-        python_versions = list(get_pyenv_pythons())
+        python_versions = list(get_pyenv_pythons(versions_folder="~/fake/versions"))
 
     assert python_versions == [PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")]
 
