@@ -26,45 +26,27 @@ import os
 import os.path
 from _collections_abc import Iterator
 
-from ducktools.lazyimporter import LazyImporter, FromImport
-
 from ..shared import PythonInstall, get_install_details
-
-
-_laz = LazyImporter(
-    [
-        FromImport("subprocess", "run"),
-    ]
-)
-
-PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions")
 
 
 def get_pyenv_versions_folder() -> str | None:
     # Check if the environment variable exists, if so use that
-    # As a backup try to run pyenv to obtain the root folder
+    # Windows PYENV does not have the `pyenv root` command to use as a backup.
     pyenv_root = os.environ.get("PYENV_ROOT")
-    if not pyenv_root:
-        try:
-            output = _laz.run(["pyenv", "root"], capture_output=True, text=True)
-        except FileNotFoundError:
-            return None
-
-        pyenv_root = output.stdout.strip()
-
     versions_folder = os.path.join(pyenv_root, "versions")
     return versions_folder
 
 
 def get_pyenv_pythons(
-    versions_folder: str | os.PathLike | None = PYENV_VERSIONS_FOLDER,
+    versions_folder: str | os.PathLike | None = None,
     *,
     query_executables: bool = True,
 ) -> Iterator[PythonInstall]:
     if versions_folder is None:
         versions_folder = get_pyenv_versions_folder()
-        if versions_folder is None:
-            return
+
+    if versions_folder is None or not os.path.exists(versions_folder):
+        return
 
     for p in os.scandir(versions_folder):
         path_base = os.path.basename(p.path)
