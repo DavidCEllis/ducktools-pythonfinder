@@ -31,28 +31,46 @@ import os
 import os.path
 from _collections_abc import Iterator
 
-from ducktools.lazyimporter import LazyImporter, ModuleImport
+from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 
 from ..shared import PythonInstall, get_install_details, FULL_PY_VER_RE, version_str_to_tuple
 
 _laz = LazyImporter(
     [
         ModuleImport("re"),
+        FromImport("subprocess", "run"),
     ]
 )
 
 # pyenv folder name for pypy
 PYPY_VER_RE = r"^pypy(?P<pyversion>\d{1,2}\.\d+)-(?P<pypyversion>[\d\.]*)$"
 
-PYENV_VERSIONS_FOLDER = os.path.join(os.environ.get("PYENV_ROOT", ""), "versions")
+
+def get_pyenv_root() -> str | None:
+    # Check if the environment variable exists, if so use that
+    # As a backup try to run pyenv to obtain the root folder
+    pyenv_root = os.environ.get("PYENV_ROOT")
+    if not pyenv_root:
+        try:
+            output = _laz.run(["pyenv", "root"], capture_output=True, text=True)
+        except FileNotFoundError:
+            return None
+
+        pyenv_root = output.stdout.strip()
+
+    return pyenv_root
 
 
 def get_pyenv_pythons(
-    versions_folder: str | os.PathLike = PYENV_VERSIONS_FOLDER,
+    versions_folder: str | os.PathLike | None = None,
     *,
     query_executables: bool = True,
 ) -> Iterator[PythonInstall]:
-    if not os.path.exists(versions_folder):
+    if versions_folder is None:
+        if pyenv_root := get_pyenv_root():
+            versions_folder = os.path.join(pyenv_root, "versions")
+
+    if versions_folder is None or not os.path.exists(versions_folder):
         return
 
     # Sorting puts standard python versions before alternate implementations

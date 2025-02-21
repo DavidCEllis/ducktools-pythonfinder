@@ -28,14 +28,14 @@ import itertools
 from _collections_abc import Iterator
 
 from ..shared import PythonInstall, get_folder_pythons, get_uv_pythons, get_uv_python_path
-from .pyenv_search import get_pyenv_pythons
+from .pyenv_search import get_pyenv_pythons, get_pyenv_root
 
 
 def get_path_pythons() -> Iterator[PythonInstall]:
     exe_names = set()
 
     path_folders = os.environ.get("PATH", "").split(":")
-    pyenv_root = os.environ.get("PYENV_ROOT")
+    pyenv_root = get_pyenv_root()
     uv_root = get_uv_python_path()
 
     excluded_folders = [pyenv_root, uv_root]

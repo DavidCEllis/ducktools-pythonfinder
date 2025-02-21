@@ -25,6 +25,7 @@ import sys
 import os
 import os.path
 import textwrap
+import types
 from pathlib import Path
 
 import pytest
@@ -36,16 +37,37 @@ from ducktools.pythonfinder import details_script
 if sys.platform == "win32":
     from ducktools.pythonfinder.win32.pyenv_search import (
         get_pyenv_pythons,
-        PYENV_VERSIONS_FOLDER,
+        get_pyenv_root,
     )
 else:
     from ducktools.pythonfinder.linux.pyenv_search import (
         get_pyenv_pythons,
-        PYENV_VERSIONS_FOLDER,
+        get_pyenv_root,
     )
 
 
 details_text = Path(details_script.__file__).read_text()
+
+
+def test_get_pyenv_root_env():
+    fake_path = "path/to/pyenv"
+    with patch.dict(os.environ, {"PYENV_ROOT": fake_path}):
+        assert get_pyenv_root() == fake_path
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
+def test_get_pyenv_root_backup():
+    with patch.dict(os.environ) as patched:
+        if "PYENV_ROOT" in patched:
+            del patched["PYENV_ROOT"]
+
+        from ducktools.pythonfinder.linux.pyenv_search import _laz
+        with patch.object(_laz, "run") as run_mock:
+            run_mock.return_value = types.SimpleNamespace(stdout="path/to/pyenv\n")
+            pyenv_root = get_pyenv_root()
+            run_mock.assert_called_with(["pyenv", "root"], text=True, capture_output=True)
+
+    assert pyenv_root == "path/to/pyenv"
 
 
 def test_no_versions_folder():
@@ -59,18 +81,20 @@ def test_mock_versions_folder():
 
     out_ver = "3.12.1"
     if sys.platform == "win32":
-        out_executable = os.path.join(PYENV_VERSIONS_FOLDER, out_ver, "python.exe")
+        versions_folder = os.path.join("c:", "fake", "versions")
+        out_executable = os.path.join(versions_folder, out_ver, "python.exe")
     else:
-        out_executable = os.path.join(PYENV_VERSIONS_FOLDER, out_ver, "bin/python")
+        versions_folder = "~/fake/versions"
+        out_executable = os.path.join(versions_folder, out_ver, "bin/python")
 
     mock_dir_entry.name = out_ver
-    mock_dir_entry.path = os.path.join(PYENV_VERSIONS_FOLDER, out_ver)
+    mock_dir_entry.path = os.path.join(versions_folder, out_ver)
 
     with patch("os.path.exists") as exists_mock, patch("os.scandir") as scandir_mock:
         exists_mock.return_value = True
         scandir_mock.return_value = iter([mock_dir_entry])
 
-        python_versions = list(get_pyenv_pythons())
+        python_versions = list(get_pyenv_pythons(versions_folder="~/fake/versions"))
 
     assert python_versions == [PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")]
 
