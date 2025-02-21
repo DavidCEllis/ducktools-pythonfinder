@@ -90,10 +90,7 @@ def test_mock_versions_folder():
     mock_dir_entry.name = out_ver
     mock_dir_entry.path = os.path.join(versions_folder, out_ver)
 
-    with (
-        patch("os.path.exists") as exists_mock,
-        patch("os.scandir") as scandir_mock,
-    ):
+    with patch("os.path.exists") as exists_mock, patch("os.scandir") as scandir_mock:
         exists_mock.return_value = True
         scandir_mock.return_value = iter([mock_dir_entry])
 
