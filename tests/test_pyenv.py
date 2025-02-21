@@ -38,26 +38,26 @@ from ducktools.pythonfinder import details_script
 if sys.platform == "win32":
     from ducktools.pythonfinder.win32.pyenv_search import (
         get_pyenv_pythons,
-        get_pyenv_versions_folder
+        get_pyenv_root,
     )
 else:
     from ducktools.pythonfinder.linux.pyenv_search import (
         get_pyenv_pythons,
-        get_pyenv_versions_folder,
+        get_pyenv_root,
     )
 
 
 details_text = Path(details_script.__file__).read_text()
 
 
-def test_get_versions_folder_env():
+def test_get_pyenv_root_env():
     fake_path = "path/to/pyenv"
     with patch.dict(os.environ, {"PYENV_ROOT": fake_path}):
-        assert get_pyenv_versions_folder() == os.path.join(fake_path, "versions")
+        assert get_pyenv_root() == fake_path
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
-def test_get_versions_folder_backup():
+def test_get_pyenv_root_backup():
     with patch.dict(os.environ) as patched:
         if "PYENV_ROOT" in patched:
             del patched["PYENV_ROOT"]
@@ -65,10 +65,10 @@ def test_get_versions_folder_backup():
         from ducktools.pythonfinder.linux.pyenv_search import _laz
         with patch.object(_laz, "run") as run_mock:
             run_mock.return_value = types.SimpleNamespace(stdout="path/to/pyenv\n")
-            versions_folder = get_pyenv_versions_folder()
+            pyenv_root = get_pyenv_root()
             run_mock.assert_called_with(["pyenv", "root"], text=True, capture_output=True)
 
-    assert versions_folder == "path/to/pyenv/versions"
+    assert pyenv_root == "path/to/pyenv"
 
 
 def test_no_versions_folder():

@@ -29,12 +29,11 @@ from _collections_abc import Iterator
 from ..shared import PythonInstall, get_install_details
 
 
-def get_pyenv_versions_folder() -> str | None:
+def get_pyenv_root() -> str | None:
     # Check if the environment variable exists, if so use that
     # Windows PYENV does not have the `pyenv root` command to use as a backup.
     pyenv_root = os.environ.get("PYENV_ROOT")
-    versions_folder = os.path.join(pyenv_root, "versions")
-    return versions_folder
+    return pyenv_root
 
 
 def get_pyenv_pythons(
@@ -42,8 +41,10 @@ def get_pyenv_pythons(
     *,
     query_executables: bool = True,
 ) -> Iterator[PythonInstall]:
+
     if versions_folder is None:
-        versions_folder = get_pyenv_versions_folder()
+        if pyenv_root := get_pyenv_root():
+            versions_folder = os.path.join(pyenv_root, "versions")
 
     if versions_folder is None or not os.path.exists(versions_folder):
         return
