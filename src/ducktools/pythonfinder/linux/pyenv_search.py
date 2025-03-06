@@ -22,8 +22,6 @@
 # SOFTWARE.
 from __future__ import annotations
 
-from json import JSONDecodeError
-
 """
 Discover python installs that have been created with pyenv
 """
@@ -38,6 +36,7 @@ from ..shared import PythonInstall, DetailFinder, FULL_PY_VER_RE, INSTALLER_CACH
 
 _laz = LazyImporter(
     [
+        ModuleImport("json"),
         ModuleImport("re"),
         FromImport("subprocess", "run"),
     ]
@@ -55,7 +54,7 @@ def get_pyenv_root() -> str | None:
         try:
             with open(INSTALLER_CACHE_PATH) as f:
                 installer_cache = _laz.json.load(f)
-        except (FileNotFoundError, JSONDecodeError):
+        except (FileNotFoundError, _laz.json.JSONDecodeError):
             installer_cache = {}
 
         pyenv_root = installer_cache.get("pyenv")
