@@ -80,7 +80,8 @@ else:
 
 
 CACHE_VERSION = 1
-CACHE_PATH = os.path.join(CACHE_FOLDER, f"runtime_cache_v{CACHE_VERSION}.json")
+DETAILS_CACHE_PATH = os.path.join(CACHE_FOLDER, f"runtime_cache_v{CACHE_VERSION}.json")
+INSTALLER_CACHE_PATH = os.path.join(CACHE_FOLDER, "installer_details.json")
 
 
 def version_str_to_tuple(version):
@@ -156,7 +157,7 @@ class DetailsScript(Prefab):
 
 
 class DetailFinder(Prefab):
-    cache_path: str = CACHE_PATH
+    cache_path: str = DETAILS_CACHE_PATH
     details_script: DetailsScript = attribute(default_factory=DetailsScript)
 
     _raw_cache: dict | None = attribute(default=None, private=True)
@@ -184,7 +185,7 @@ class DetailFinder(Prefab):
         if self._dirty_cache:
             os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
             with open(self.cache_path, 'w') as f:
-                _laz.json.dump(self.raw_cache, f)
+                _laz.json.dump(self.raw_cache, f, indent=4)
 
     def clear_invalid_runtimes(self):
         """
@@ -428,6 +429,16 @@ def get_folder_pythons(
 # UV Specific finder
 def get_uv_python_path() -> str | None:
     try:
+        with open(INSTALLER_CACHE_PATH) as f:
+            installer_cache = _laz.json.load(f)
+    except (FileNotFoundError, _laz.json.JSONDecodeError):
+        installer_cache = {}
+
+    uv_python_dir = installer_cache.get("uv")
+    if uv_python_dir and os.path.exists(uv_python_dir):
+        return uv_python_dir
+
+    try:
         uv_python_find = _laz.subprocess.run(
             ["uv", "python", "dir"],
             check=True,
@@ -439,6 +450,11 @@ def get_uv_python_path() -> str | None:
     else:
         # remove newline
         uv_python_dir = uv_python_find.stdout.strip()
+
+    installer_cache["uv"] = uv_python_dir
+    os.makedirs(os.path.dirname(INSTALLER_CACHE_PATH), exist_ok=True)
+    with open(INSTALLER_CACHE_PATH, 'w') as f:
+        _laz.json.dump(installer_cache, f)
 
     return uv_python_dir
 

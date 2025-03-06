@@ -22,6 +22,7 @@
 # SOFTWARE.
 from __future__ import annotations
 
+from json import JSONDecodeError
 
 """
 Discover python installs that have been created with pyenv
@@ -33,7 +34,7 @@ from _collections_abc import Iterator
 
 from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 
-from ..shared import PythonInstall, DetailFinder, FULL_PY_VER_RE, version_str_to_tuple
+from ..shared import PythonInstall, DetailFinder, FULL_PY_VER_RE, INSTALLER_CACHE_PATH, version_str_to_tuple
 
 _laz = LazyImporter(
     [
@@ -52,11 +53,24 @@ def get_pyenv_root() -> str | None:
     pyenv_root = os.environ.get("PYENV_ROOT")
     if not pyenv_root:
         try:
-            output = _laz.run(["pyenv", "root"], capture_output=True, text=True)
-        except FileNotFoundError:
-            return None
+            with open(INSTALLER_CACHE_PATH) as f:
+                installer_cache = _laz.json.load(f)
+        except (FileNotFoundError, JSONDecodeError):
+            installer_cache = {}
 
-        pyenv_root = output.stdout.strip()
+        pyenv_root = installer_cache.get("pyenv")
+        if pyenv_root is None or not os.path.exists(pyenv_root):
+            try:
+                output = _laz.run(["pyenv", "root"], capture_output=True, text=True)
+            except FileNotFoundError:
+                return None
+
+            pyenv_root = output.stdout.strip()
+
+            installer_cache["pyenv"] = pyenv_root
+            os.makedirs(os.path.dirname(INSTALLER_CACHE_PATH), exist_ok=True)
+            with open(INSTALLER_CACHE_PATH, 'w') as f:
+                _laz.json.dump(installer_cache, f)
 
     return pyenv_root
 
