@@ -43,7 +43,7 @@ def uses_details_script(fs):
     fs.add_real_file(details_script.__file__)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def temp_finder():
     with tempfile.TemporaryDirectory() as tmpdir:
         temp_cache_path = os.path.join(tmpdir, "cache.json")
@@ -51,7 +51,7 @@ def temp_finder():
         yield finder
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def this_python(temp_finder):
     config_exe = sysconfig.get_config_var("EXENAME")
 
@@ -70,7 +70,7 @@ def this_python(temp_finder):
     return temp_finder.query_install(str(py_exe))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def this_venv(temp_finder):
     if sys.platform == "win32":
         exe = sys.executable

@@ -224,7 +224,7 @@ def test_pypy_version(fs, temp_finder):
     # Test pypy version retrieval
 
     ver_folder = "pypy3.10-7.3.15"
-    tmpdir = "~/.pyenv/versions"
+    tmpdir = os.path.expanduser("~/.pyenv/versions")
 
     mock_output = textwrap.dedent(
         """
@@ -239,6 +239,7 @@ def test_pypy_version(fs, temp_finder):
     py_folder = os.path.join(tmpdir, ver_folder)
     py_exe = os.path.join(py_folder, "bin/python")
 
+    fs.add_real_file(details_script.__file__)
     fs.create_dir(py_folder)
     fs.create_dir(os.path.join(py_folder, "bin"))
     fs.create_file(py_exe)
@@ -248,7 +249,7 @@ def test_pypy_version(fs, temp_finder):
         versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
 
         run_cmd.assert_called_once_with(
-            [py_exe, "-"],
+            [os.path.abspath(py_exe), "-"],
             input=details_text,
             capture_output=True,
             text=True,
