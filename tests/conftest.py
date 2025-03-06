@@ -23,13 +23,14 @@
 import os.path
 import sys
 import sysconfig
+import tempfile
 
 from pathlib import Path
 
 import pytest
 
 from ducktools.pythonfinder import details_script
-from ducktools.pythonfinder.shared import get_install_details
+from ducktools.pythonfinder.shared import DetailFinder
 
 
 @pytest.fixture(scope="session")
@@ -43,7 +44,15 @@ def uses_details_script(fs):
 
 
 @pytest.fixture(scope="session")
-def this_python():
+def temp_finder():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        temp_cache_path = os.path.join(tmpdir, "cache.json")
+        finder = DetailFinder(cache_path=temp_cache_path)
+        yield finder
+
+
+@pytest.fixture(scope="session")
+def this_python(temp_finder):
     config_exe = sysconfig.get_config_var("EXENAME")
 
     if config_exe:
@@ -58,16 +67,16 @@ def this_python():
     else:
         py_exe = Path(sys.base_prefix) / "bin" / exename
 
-    return get_install_details(str(py_exe))
+    return temp_finder.query_install(str(py_exe))
 
 
 @pytest.fixture(scope="session")
-def this_venv():
+def this_venv(temp_finder):
     if sys.platform == "win32":
         exe = sys.executable
     else:
         exe = str(Path(sys.executable).with_name("python"))
-    venv = get_install_details(exe)
+    venv = temp_finder.query_install(exe)
     return venv
 
 

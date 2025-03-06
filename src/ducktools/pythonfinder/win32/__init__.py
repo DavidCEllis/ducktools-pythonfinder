@@ -25,18 +25,26 @@ from __future__ import annotations
 from _collections_abc import Iterator
 import itertools
 
-from ..shared import PythonInstall, get_uv_pythons
+from ..shared import PythonInstall, get_uv_pythons, DetailFinder
 from .pyenv_search import get_pyenv_pythons
 from .registry_search import get_registered_pythons
 
 
-def get_python_installs(*, query_executables: bool = True) -> Iterator[PythonInstall]:
+def get_python_installs(
+    *,
+    query_executables: bool = True,
+    finder: DetailFinder | None = None
+) -> Iterator[PythonInstall]:
     listed_installs = set()
-    for py in itertools.chain(
-        get_registered_pythons(),
-        get_pyenv_pythons(query_executables=query_executables),
-        get_uv_pythons(query_executables=query_executables),
-    ):
-        if py.executable not in listed_installs:
-            yield py
-            listed_installs.add(py.executable)
+
+    finder = DetailFinder() if finder is None else finder
+
+    with finder:
+        for py in itertools.chain(
+            get_registered_pythons(),
+            get_pyenv_pythons(query_executables=query_executables, finder=finder),
+            get_uv_pythons(query_executables=query_executables, finder=finder),
+        ):
+            if py.executable not in listed_installs:
+                yield py
+                listed_installs.add(py.executable)

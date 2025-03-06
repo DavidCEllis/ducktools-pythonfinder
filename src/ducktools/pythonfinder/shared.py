@@ -28,7 +28,7 @@ import os.path
 
 from _collections_abc import Iterator
 
-from ducktools.classbuilder.prefab import Prefab, attribute
+from ducktools.classbuilder.prefab import Prefab, attribute, as_dict
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
 from . import details_script
@@ -155,7 +155,127 @@ class DetailsScript(Prefab):
         return self._source_code
 
 
-details = DetailsScript()
+class DetailFinder(Prefab):
+    cache_path: str = CACHE_PATH
+    details_script: DetailsScript = attribute(default_factory=DetailsScript)
+
+    _raw_cache: dict | None = attribute(default=None, private=True)
+    _dirty_cache: bool = attribute(default=False, private=True)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type in {None, GeneratorExit}:
+            self.save()
+
+    @property
+    def raw_cache(self):
+        if self._raw_cache is None:
+            try:
+                with open(self.cache_path) as f:
+                    self._raw_cache = _laz.json.load(f)
+            except (_laz.json.JSONDecodeError, FileNotFoundError):
+                self._raw_cache = {}
+        return self._raw_cache
+
+    def save(self):
+        # Only save if the cache has changed
+        if self._dirty_cache:
+            os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
+            with open(self.cache_path, 'w') as f:
+                _laz.json.dump(self.raw_cache, f)
+
+    def clear_invalid_runtimes(self):
+        """
+        Remove cache entries where the python.exe no longer exists
+        """
+        removed_runtimes: set[str] = set()
+        for exe_path in self.raw_cache.copy().keys():
+            if not os.path.exists(exe_path):
+                self.raw_cache.pop(exe_path)
+                removed_runtimes.add(exe_path)
+        if removed_runtimes:
+            self._dirty_cache = True
+
+    def clear_cache(self):
+        """
+        Completely empty the cache
+        """
+        self._raw_cache = {}
+        self._dirty_cache = True
+
+    def query_install(self, exe_path: str, managed_by: str | None = None) -> PythonInstall | None:
+        """
+        Query the details of a Python install directly
+
+        :param exe_path: Path to the runtime .exe
+        :param managed_by: Which tool manages this install (if any)
+        :return: a PythonInstall if one exists at the exe Path
+        """
+        try:
+            source = self.details_script.get_source_code()
+        except FileNotFoundError:
+            return None
+
+        try:
+            detail_output = _laz.subprocess.run(
+                [exe_path, "-"],
+                input=source,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+        except OSError:
+            # Something else has gone wrong
+            return None
+        except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+            # Potentially this is micropython which does not support
+            # piping from stdin. Try using a file in a temporary folder.
+            # Python 3.12 has delete_on_close that would make TemporaryFile
+            # Usable on windows but for now use a directory
+            with _laz.tempfile.TemporaryDirectory() as tempdir:
+                temp_script = os.path.join(tempdir, "details_script.py")
+                with open(temp_script, "w") as f:
+                    f.write(source)
+                try:
+                    detail_output = _laz.subprocess.run(
+                        [exe_path, temp_script],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    ).stdout
+                except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+                    return None
+
+        try:
+            output = _laz.json.loads(detail_output)
+        except _laz.json.JSONDecodeError:
+            return None
+
+        return PythonInstall.from_json(**output, managed_by=managed_by)
+
+    def get_install_details(self, exe_path: str, managed_by=None) -> PythonInstall | None:
+        exe_path = os.path.abspath(exe_path)
+        mtime = os.stat(exe_path).st_mtime
+
+        install = None
+        if cached_details := self.raw_cache.get(exe_path):
+            if cached_details["mtime"] == mtime:
+                install = PythonInstall.from_json(**cached_details["install"])
+            else:
+                self.raw_cache.pop(exe_path)
+
+        if install is None:
+            install = self.query_install(exe_path, managed_by)
+            if install:
+                self.raw_cache[exe_path] = {
+                    "mtime": mtime,
+                    "install": as_dict(install)
+                }
+                self._dirty_cache = True
+
+        return install
 
 
 class PythonInstall(Prefab):
@@ -165,7 +285,7 @@ class PythonInstall(Prefab):
     implementation: str = "cpython"
     managed_by: str | None = None
     metadata: dict = attribute(default_factory=dict)
-    shadowed: bool = False
+    shadowed: bool = attribute(default=False, serialize=False)
     _implementation_version: tuple[int, int, int, str, int] | None = attribute(default=None, private=True)
 
     def __prefab_post_init__(
@@ -223,7 +343,15 @@ class PythonInstall(Prefab):
         )
 
     @classmethod
-    def from_json(cls, version, executable, architecture, implementation, metadata, managed_by=None):
+    def from_json(
+        cls,
+        version,
+        executable,
+        architecture,
+        implementation,
+        metadata,
+        managed_by=None,
+    ):
         if arch_ver := metadata.get(f"{implementation}_version"):
             metadata[f"{implementation}_version"] = tuple(arch_ver)
 
@@ -264,63 +392,22 @@ def _python_exe_regex(basename: str = "python"):
         return _laz.re.compile(rf"{basename}\d?\.?\d*")
 
 
-def get_install_details(executable: str, managed_by=None) -> PythonInstall | None:
-    try:
-        source = details.get_source_code()
-    except FileNotFoundError:
-        return None
-
-    try:
-        detail_output = _laz.subprocess.run(
-            [executable, "-"],
-            input=source,
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout
-    except OSError:
-        # Something else has gone wrong
-        return None
-    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
-        # Potentially this is micropython which does not support
-        # piping from stdin. Try using a file in a temporary folder.
-        # Python 3.12 has delete_on_close that would make TemporaryFile
-        # Usable on windows but for now use a directory
-        with _laz.tempfile.TemporaryDirectory() as tempdir:
-            temp_script = os.path.join(tempdir, "details_script.py")
-            with open(temp_script, "w") as f:
-                f.write(source)
-            try:
-                detail_output = _laz.subprocess.run(
-                    [executable, temp_script],
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                ).stdout
-            except (_laz.subprocess.CalledProcessError, FileNotFoundError):
-                return None
-
-    try:
-        output = _laz.json.loads(detail_output)
-    except _laz.json.JSONDecodeError as e:
-        return None
-
-    return PythonInstall.from_json(**output, managed_by=managed_by)
-
-
 def get_folder_pythons(
     base_folder: str | os.PathLike,
-    basenames: tuple[str] = ("python", "pypy")
+    basenames: tuple[str] = ("python", "pypy"),
+    finder: DetailFinder | None = None,
 ):
     regexes = [_python_exe_regex(name) for name in basenames]
 
-    with os.scandir(base_folder) as fld:
+    finder = DetailFinder() if finder is None else finder
+
+    with finder, os.scandir(base_folder) as fld:
         for file_path in fld:
             try:
                 is_file = file_path.is_file()
             except PermissionError:
                 continue
-            
+
             if (
                 is_file
                 and any(reg.fullmatch(file_path.name) for reg in regexes)
@@ -333,7 +420,7 @@ def get_folder_pythons(
                         continue
                 else:
                     p = file_path.path
-                install = get_install_details(p)
+                install = finder.get_install_details(p)
                 if install:
                     yield install
 
@@ -359,11 +446,13 @@ def get_uv_python_path() -> str | None:
 def _implementation_from_uv_dir(
     direntry: os.DirEntry,
     query_executables: bool = True,
+    finder: DetailFinder | None = None,
 ) -> PythonInstall | None:
     python_exe = "python.exe" if sys.platform == "win32" else "bin/python"
     python_path = os.path.join(direntry, python_exe)
 
     install: PythonInstall | None = None
+    finder = DetailFinder() if finder is None else finder
 
     if os.path.exists(python_path):
         if match := _laz.re.fullmatch(UV_PYTHON_RE, direntry.name):
@@ -380,7 +469,7 @@ def _implementation_from_uv_dir(
                         architecture="32bit" if arch in {"i686", "armv7"} else "64bit",
                         implementation=implementation,
                         metadata=metadata,
-                        managed_by="Astral UV",
+                        managed_by="Astral",
                     )
             except ValueError:
                 pass
@@ -389,21 +478,22 @@ def _implementation_from_uv_dir(
             # Directory name format has changed or this is an alternate implementation
             # Slow backup - ask python itself
             if query_executables:
-                install = get_install_details(python_path)
-                install.managed_by = "Astral UV"
+                install = finder.get_install_details(python_path, managed_by="Astral")
 
     return install
 
 
-def get_uv_pythons(query_executables=True) -> Iterator[PythonInstall]:
+def get_uv_pythons(query_executables=True, finder=None) -> Iterator[PythonInstall]:
     # This takes some shortcuts over the regular pythonfinder
     # As the UV folders give the python version and the implementation
     if uv_python_path := get_uv_python_path():
         if os.path.exists(uv_python_path):
-            with os.scandir(uv_python_path) as fld:
+            finder = DetailFinder() if finder is None else finder
+
+            with finder, os.scandir(uv_python_path) as fld:
                 for f in fld:
                     if (
                         f.is_dir()
-                        and (install := _implementation_from_uv_dir(f, query_executables))
+                        and (install := _implementation_from_uv_dir(f, query_executables, finder=finder))
                     ):
                         yield install

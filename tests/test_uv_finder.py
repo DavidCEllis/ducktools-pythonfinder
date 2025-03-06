@@ -121,27 +121,27 @@ class TestUVReal:
         assert pythons == []
 
     @pytest.mark.uv_python
-    def test_finds_installed_python(self, uv_pythondir):
+    def test_finds_installed_python(self, uv_pythondir, temp_finder):
         # Install python 3.12.6 in the tempdir
         subprocess.run(
             ["uv", "python", "install", "3.12.6"],
             check=True,
         )
 
-        pythons = list(get_uv_pythons())
+        pythons = list(get_uv_pythons(finder=temp_finder))
         assert len(pythons) == 1
         assert pythons[0].version_str == "3.12.6"
         assert pythons[0].implementation == "cpython"
         assert pythons[0].managed_by == "Astral UV"
 
     @pytest.mark.uv_python
-    def test_finds_installed_pypy(self, uv_pythondir):
+    def test_finds_installed_pypy(self, uv_pythondir, temp_finder):
         subprocess.run(
             ["uv", "python", "install", "pypy3.10"],
             check=True,
         )
 
-        pythons = list(get_uv_pythons())
+        pythons = list(get_uv_pythons(finder=temp_finder))
         assert len(pythons) == 1
         assert pythons[0].version >= (3, 10, 14)
         assert pythons[0].implementation == "pypy"
