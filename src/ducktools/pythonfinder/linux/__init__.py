@@ -48,7 +48,6 @@ def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonIn
 
     finder = DetailFinder if finder is None else finder
 
-
     for fld in path_folders:
         # Don't retrieve pyenv installs
         skip_folder = False
@@ -88,7 +87,8 @@ def get_python_installs(
     if query_executables:
         chain_commands.append(get_path_pythons(finder=finder))
 
-    for py in itertools.chain.from_iterable(chain_commands):
-        if py.executable not in listed_pythons:
-            yield py
-            listed_pythons.add(py.executable)
+    with finder:
+        for py in itertools.chain.from_iterable(chain_commands):
+            if py.executable not in listed_pythons:
+                yield py
+                listed_pythons.add(py.executable)
