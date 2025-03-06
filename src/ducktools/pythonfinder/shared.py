@@ -45,7 +45,6 @@ _laz = LazyImporter(
     ]
 )
 
-
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
 UV_PYTHON_RE = (
@@ -55,6 +54,33 @@ UV_PYTHON_RE = (
     r"-(?P<arch>\w*)"
     r"-.*"
 )
+
+# Cache for runtime details
+# Code to work out where to store data
+# Store in LOCALAPPDATA for windows, User folder for other operating systems
+if sys.platform == "win32":
+    # os.path.expandvars will actually import a whole bunch of other modules
+    # Try just using the environment.
+    if _local_app_folder := os.environ.get("LOCALAPPDATA"):
+        if not os.path.isdir(_local_app_folder):
+            raise FileNotFoundError(
+                f"Could not find local app data folder {_local_app_folder}"
+            )
+    else:
+        raise EnvironmentError(
+            "Environment variable %LOCALAPPDATA% "
+            "for local application data folder location "
+            "not found"
+        )
+    USER_FOLDER = _local_app_folder
+    CACHE_FOLDER = os.path.join(USER_FOLDER, "ducktools", "pythonfinder", "cache")
+else:
+    USER_FOLDER = os.path.expanduser("~")
+    CACHE_FOLDER = os.path.join(USER_FOLDER, ".cache", "ducktools", "pythonfinder")
+
+
+CACHE_VERSION = 1
+CACHE_PATH = os.path.join(CACHE_FOLDER, f"runtime_cache_v{CACHE_VERSION}.json")
 
 
 def version_str_to_tuple(version):
@@ -203,7 +229,7 @@ class PythonInstall(Prefab):
 
         # noinspection PyArgumentList
         return cls(
-            version=tuple(version),
+            version=tuple(version),  # type: ignore
             executable=executable,
             architecture=architecture,
             implementation=implementation,
