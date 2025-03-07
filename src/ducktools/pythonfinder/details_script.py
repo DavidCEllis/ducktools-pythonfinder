@@ -29,11 +29,13 @@ import sys
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
 
-def version_str_to_tuple(version):
+def version_str_to_tuple(version: str):
     # Needed to parse GraalPy versions only available as strings
     import re
 
     parsed_version = re.fullmatch(FULL_PY_VER_RE, version)
+    if parsed_version is None:
+        raise ValueError(f"'version' must be a valid Python version string, not {version!r}")
 
     major, minor, micro, releaselevel, serial = parsed_version.groups()
 
@@ -70,11 +72,11 @@ def get_details():
             # Special case GraalPy as it erroneously reports the CPython target
             # instead of the Graal versiion
             try:
-                ver = __graalpython__.get_graalvm_version()
+                ver = __graalpython__.get_graalvm_version()  # type: ignore
                 metadata = {
                     "graalpy_version": version_str_to_tuple(ver)
                 }
-            except NameError:
+            except (NameError, ValueError):
                 metadata = {"{}_version".format(implementation): sys.implementation.version}
         elif implementation != "cpython":  # pragma: no cover
             metadata = {"{}_version".format(implementation): sys.implementation.version}
