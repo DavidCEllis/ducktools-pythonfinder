@@ -29,13 +29,16 @@ import sys
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
 
-def version_str_to_tuple(version: str):
+def version_str_to_tuple(version):
     # Needed to parse GraalPy versions only available as strings
     import re
 
     parsed_version = re.fullmatch(FULL_PY_VER_RE, version)
     if parsed_version is None:
-        raise ValueError(f"'version' must be a valid Python version string, not {version!r}")
+        raise ValueError(
+            "'version' must be a valid Python version string, "
+            + "not {version!r}".format(version=version)
+        )
 
     major, minor, micro, releaselevel, serial = parsed_version.groups()
 
