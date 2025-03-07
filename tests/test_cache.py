@@ -200,27 +200,28 @@ def test_changed_stat_invalidates(run_mock, temp_finder):
         st_ctime=1739886571
     )
 
-    with patch("os.stat") as statmock, patch.object(DetailFinder, "query_install") as querymock:
-        statmock.return_value = result
-        querymock.return_value = example_install
+    with patch.object(DetailFinder, "save"):
+        with patch("os.stat") as statmock, patch.object(DetailFinder, "query_install") as querymock:
+            statmock.return_value = result
+            querymock.return_value = example_install
 
-        with temp_finder:
-            details = temp_finder.get_install_details(fake_python_path)
-        
-        assert temp_finder.raw_cache[fake_abspath]["mtime"] == 1739886571
+            with temp_finder:
+                details = temp_finder.get_install_details(fake_python_path)
 
-        querymock.assert_called_with(fake_abspath, None)
-        querymock.reset_mock()
-        
-        with temp_finder:
-            details = temp_finder.get_install_details(fake_python_path)
-        
-        assert temp_finder.raw_cache[fake_abspath]["mtime"] == 1739886571
-        querymock.assert_not_called()
+            assert temp_finder.raw_cache[fake_abspath]["mtime"] == 1739886571
 
-        statmock.return_value = changed_result
-        with temp_finder:
-            details = temp_finder.get_install_details(fake_python_path)
+            querymock.assert_called_with(fake_abspath, None)
+            querymock.reset_mock()
 
-        assert temp_finder.raw_cache[fake_abspath]["mtime"] == 1739886572
-        querymock.assert_called()
+            with temp_finder:
+                details = temp_finder.get_install_details(fake_python_path)
+
+            assert temp_finder.raw_cache[fake_abspath]["mtime"] == 1739886571
+            querymock.assert_not_called()
+
+            statmock.return_value = changed_result
+            with temp_finder:
+                details = temp_finder.get_install_details(fake_python_path)
+
+            assert temp_finder.raw_cache[fake_abspath]["mtime"] == 1739886572
+            querymock.assert_called()
