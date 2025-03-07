@@ -57,7 +57,19 @@ def run_mock():
 
 @pytest.fixture
 def stat_mock():
-    result = SimpleNamespace(st_mtime=1739886571)
+    result = SimpleNamespace(
+        st_mode=33279,
+        st_ino=6755399441550587,
+        st_dev=7836505329022787966,
+        st_nlink=1,
+        st_uid=0,
+        st_gid=0,
+        st_size=91648,
+        st_atime=1741351198,
+        st_mtime=1739886571,
+        st_ctime=1739886571
+    )
+
     with patch("os.stat") as mock:
         mock.return_value = result
         yield
@@ -163,8 +175,30 @@ def test_clear_invalid_runtimes(run_mock, stat_mock, temp_finder):
 def test_changed_stat_invalidates(run_mock, temp_finder):
     fake_abspath = os.path.abspath(fake_python_path)
 
-    result = SimpleNamespace(st_mtime=1739886571)
-    changed_result = SimpleNamespace(st_mtime=1739886572)
+    result = SimpleNamespace(
+        st_mode=33279,
+        st_ino=6755399441550587,
+        st_dev=7836505329022787966,
+        st_nlink=1,
+        st_uid=0,
+        st_gid=0,
+        st_size=91648,
+        st_atime=1741351198,
+        st_mtime=1739886571,
+        st_ctime=1739886571
+    )
+    changed_result = SimpleNamespace(
+        st_mode=33279,
+        st_ino=6755399441550587,
+        st_dev=7836505329022787966,
+        st_nlink=1,
+        st_uid=0,
+        st_gid=0,
+        st_size=91648,
+        st_atime=1741351198,
+        st_mtime=1739886572,
+        st_ctime=1739886571
+    )
 
     with patch("os.stat") as statmock, patch.object(DetailFinder, "query_install") as querymock:
         statmock.return_value = result
