@@ -132,10 +132,10 @@ def test_found_parent(with_venvs, this_python, this_venv):
     assert venv_ex.version[:3] == parent.version[:3]
 
 
-def test_found_parent_cache(with_venvs, this_python):
+def test_found_parent_cache(with_venvs, this_python, temp_finder):
     venv_ex = list_python_venvs(base_dir=with_venvs, recursive=False)[0]
 
-    parent = venv_ex.get_parent_install(cache=[this_python])
+    parent = venv_ex.get_parent_install(cache=[this_python], finder=temp_finder)
     assert parent == this_python
 
 

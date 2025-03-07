@@ -30,7 +30,7 @@ from pathlib import Path
 import pytest
 
 from ducktools.pythonfinder.shared import (
-    get_install_details,
+    DetailFinder,
     PythonInstall,
     get_folder_pythons,
 )
@@ -62,14 +62,14 @@ details_text = Path(details_script.__file__).read_text()
 @pytest.mark.parametrize(
     "output, expected", [(fake_details, fake_details_out), ("InvalidJSON", None)]
 )
-def test_get_install_details(output, expected):
+def test_query_install(output, expected, temp_finder):
     with patch("subprocess.run") as run_mock:
         mock_out = MagicMock()
 
         mock_out.stdout = output
         run_mock.return_value = mock_out
 
-        details = get_install_details(fake_details_out.executable)
+        details = temp_finder.query_install(fake_details_out.executable)
 
         run_mock.assert_called_with(
             [fake_details_out.executable, "-"],
@@ -82,12 +82,12 @@ def test_get_install_details(output, expected):
         assert details == expected
 
 
-def test_get_install_details_error():
+def test_get_install_details_error(temp_finder):
     with patch(
         "subprocess.run",
         side_effect=subprocess.CalledProcessError(1, "Unsuccessful Call"),
     ) as run_mock:
-        details = get_install_details(fake_details_out.executable)
+        details = temp_finder.query_install(fake_details_out.executable)
 
         run_mock.assert_any_call(
             [fake_details_out.executable, "-"],
@@ -100,8 +100,7 @@ def test_get_install_details_error():
         assert details is None
 
 
-def test_get_folder_pythons(fs):
-    func = "ducktools.pythonfinder.shared.get_install_details"
+def test_get_folder_pythons(fs, temp_finder):
 
     if sys.platform == "win32":
         fld = "C:\\temp\\python"
@@ -123,8 +122,11 @@ def test_get_folder_pythons(fs):
     def mock_func(pth):
         return pth
 
-    with patch(func, side_effect=mock_func) as get_dets:
-        result = list(get_folder_pythons(fld))
+    with patch.object(
+        DetailFinder, "get_install_details",
+        side_effect=mock_func
+    ) as get_dets:
+        result = list(get_folder_pythons(fld, finder=temp_finder))
 
         get_dets.assert_has_calls(
             [

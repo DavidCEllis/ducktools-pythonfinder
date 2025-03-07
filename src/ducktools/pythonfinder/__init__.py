@@ -32,7 +32,7 @@ __all__ = [
 
 import sys
 from ._version import __version__
-from .shared import PythonInstall
+from .shared import PythonInstall, DetailFinder
 
 
 if sys.platform == "win32":
@@ -43,9 +43,10 @@ else:
     from .linux import get_python_installs
 
 
-def list_python_installs(*, query_executables=True):
+def list_python_installs(*, query_executables: bool = True, finder: "DetailFinder | None" = None):
+    finder = DetailFinder() if finder is None else finder
     return sorted(
-        get_python_installs(query_executables=query_executables),
+        get_python_installs(query_executables=query_executables, finder=finder),
         reverse=True,
         key=lambda x: (x.version[3], *x.version[:3], x.version[4])
     )

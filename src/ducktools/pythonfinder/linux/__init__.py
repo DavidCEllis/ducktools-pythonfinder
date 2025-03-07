@@ -27,11 +27,17 @@ import os.path
 import itertools
 from _collections_abc import Iterator
 
-from ..shared import PythonInstall, get_folder_pythons, get_uv_pythons, get_uv_python_path
+from ..shared import (
+    DetailFinder,
+    PythonInstall,
+    get_folder_pythons,
+    get_uv_pythons,
+    get_uv_python_path
+)
 from .pyenv_search import get_pyenv_pythons, get_pyenv_root
 
 
-def get_path_pythons() -> Iterator[PythonInstall]:
+def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonInstall]:
     exe_names = set()
 
     path_folders = os.environ.get("PATH", "").split(":")
@@ -39,6 +45,8 @@ def get_path_pythons() -> Iterator[PythonInstall]:
     uv_root = get_uv_python_path()
 
     excluded_folders = [pyenv_root, uv_root]
+
+    finder = DetailFinder if finder is None else finder
 
     for fld in path_folders:
         # Don't retrieve pyenv installs
@@ -54,7 +62,7 @@ def get_path_pythons() -> Iterator[PythonInstall]:
         if not os.path.exists(fld):
             continue
 
-        for install in get_folder_pythons(fld):
+        for install in get_folder_pythons(fld, finder=finder):
             name = os.path.basename(install.executable)
             if name in exe_names:
                 install.shadowed = True
@@ -63,17 +71,24 @@ def get_path_pythons() -> Iterator[PythonInstall]:
             yield install
 
 
-def get_python_installs(*, query_executables=True):
+def get_python_installs(
+    *,
+    query_executables: bool = True,
+    finder: DetailFinder | None = None,
+) -> Iterator[PythonInstall]:
     listed_pythons = set()
 
+    finder = DetailFinder() if finder is None else finder
+
     chain_commands = [
-        get_pyenv_pythons(query_executables=query_executables),
-        get_uv_pythons(query_executables=query_executables),
+        get_pyenv_pythons(query_executables=query_executables, finder=finder),
+        get_uv_pythons(query_executables=query_executables, finder=finder),
     ]
     if query_executables:
-        chain_commands.append(get_path_pythons())
+        chain_commands.append(get_path_pythons(finder=finder))
 
-    for py in itertools.chain.from_iterable(chain_commands):
-        if py.executable not in listed_pythons:
-            yield py
-            listed_pythons.add(py.executable)
+    with finder:
+        for py in itertools.chain.from_iterable(chain_commands):
+            if py.executable not in listed_pythons:
+                yield py
+                listed_pythons.add(py.executable)

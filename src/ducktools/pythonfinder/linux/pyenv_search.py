@@ -22,7 +22,6 @@
 # SOFTWARE.
 from __future__ import annotations
 
-
 """
 Discover python installs that have been created with pyenv
 """
@@ -33,10 +32,11 @@ from _collections_abc import Iterator
 
 from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 
-from ..shared import PythonInstall, get_install_details, FULL_PY_VER_RE, version_str_to_tuple
+from ..shared import PythonInstall, DetailFinder, FULL_PY_VER_RE, INSTALLER_CACHE_PATH, version_str_to_tuple
 
 _laz = LazyImporter(
     [
+        ModuleImport("json"),
         ModuleImport("re"),
         FromImport("subprocess", "run"),
     ]
@@ -52,11 +52,24 @@ def get_pyenv_root() -> str | None:
     pyenv_root = os.environ.get("PYENV_ROOT")
     if not pyenv_root:
         try:
-            output = _laz.run(["pyenv", "root"], capture_output=True, text=True)
-        except FileNotFoundError:
-            return None
+            with open(INSTALLER_CACHE_PATH) as f:
+                installer_cache = _laz.json.load(f)
+        except (FileNotFoundError, _laz.json.JSONDecodeError):
+            installer_cache = {}
 
-        pyenv_root = output.stdout.strip()
+        pyenv_root = installer_cache.get("pyenv")
+        if pyenv_root is None or not os.path.exists(pyenv_root):
+            try:
+                output = _laz.run(["pyenv", "root"], capture_output=True, text=True)
+            except FileNotFoundError:
+                return None
+
+            pyenv_root = output.stdout.strip()
+
+            installer_cache["pyenv"] = pyenv_root
+            os.makedirs(os.path.dirname(INSTALLER_CACHE_PATH), exist_ok=True)
+            with open(INSTALLER_CACHE_PATH, 'w') as f:
+                _laz.json.dump(installer_cache, f)
 
     return pyenv_root
 
@@ -65,6 +78,7 @@ def get_pyenv_pythons(
     versions_folder: str | os.PathLike | None = None,
     *,
     query_executables: bool = True,
+    finder: DetailFinder = None,
 ) -> Iterator[PythonInstall]:
     if versions_folder is None:
         if pyenv_root := get_pyenv_root():
@@ -77,26 +91,32 @@ def get_pyenv_pythons(
     # This can lead to much faster returns by potentially yielding
     # the required python version before checking pypy/graalpy/micropython
 
-    for p in sorted(os.scandir(versions_folder), key=lambda x: x.path):
-        executable = os.path.join(p.path, "bin/python")
+    finder = DetailFinder() if finder is None else finder
 
-        if os.path.exists(executable):
-            if p.name.endswith("t"):
-                freethreaded = True
-                version = p.name[:-1]
-            else:
-                freethreaded = False
-                version = p.name
-            if _laz.re.fullmatch(FULL_PY_VER_RE, version):
-                version_tuple = version_str_to_tuple(version)
-                metadata = {}
-                if version_tuple >= (3, 13):
-                    metadata["freethreaded"] = freethreaded
-                yield PythonInstall(
-                    version=version_tuple,
-                    executable=executable,
-                    metadata=metadata,
-                    managed_by="pyenv",
-                )
-            elif query_executables and (install := get_install_details(executable, managed_by="pyenv")):
-                yield install
+    with finder:
+        for p in sorted(os.scandir(versions_folder), key=lambda x: x.path):
+            executable = os.path.join(p.path, "bin/python")
+
+            if os.path.exists(executable):
+                if p.name.endswith("t"):
+                    freethreaded = True
+                    version = p.name[:-1]
+                else:
+                    freethreaded = False
+                    version = p.name
+                if _laz.re.fullmatch(FULL_PY_VER_RE, version):
+                    version_tuple = version_str_to_tuple(version)
+                    metadata = {}
+                    if version_tuple >= (3, 13):
+                        metadata["freethreaded"] = freethreaded
+                    yield PythonInstall(
+                        version=version_tuple,
+                        executable=executable,
+                        metadata=metadata,
+                        managed_by="pyenv",
+                    )
+                elif (
+                    query_executables
+                    and (install := finder.get_install_details(executable, managed_by="pyenv"))
+                ):
+                    yield install

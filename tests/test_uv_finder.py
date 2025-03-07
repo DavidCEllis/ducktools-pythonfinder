@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+import json
 import os
 import re
 import subprocess
@@ -42,7 +42,13 @@ UV_REASON = "UV is not installed - skipping tests that run UV"
 
 
 @pytest.fixture
-def uv_pythondir():
+def prevent_cache():
+    with mock.patch("json.load", side_effect=json.JSONDecodeError('', '', 0)) as break_json:
+        yield
+
+
+@pytest.fixture
+def uv_pythondir(prevent_cache):
     # Set the UV python folder to a temporary folder and
     # yield the temporary folder value
     uv_python_envkey = "UV_PYTHON_INSTALL_DIR"
@@ -121,27 +127,27 @@ class TestUVReal:
         assert pythons == []
 
     @pytest.mark.uv_python
-    def test_finds_installed_python(self, uv_pythondir):
+    def test_finds_installed_python(self, uv_pythondir, temp_finder):
         # Install python 3.12.6 in the tempdir
         subprocess.run(
             ["uv", "python", "install", "3.12.6"],
             check=True,
         )
 
-        pythons = list(get_uv_pythons())
+        pythons = list(get_uv_pythons(finder=temp_finder))
         assert len(pythons) == 1
         assert pythons[0].version_str == "3.12.6"
         assert pythons[0].implementation == "cpython"
         assert pythons[0].managed_by == "Astral UV"
 
     @pytest.mark.uv_python
-    def test_finds_installed_pypy(self, uv_pythondir):
+    def test_finds_installed_pypy(self, uv_pythondir, temp_finder):
         subprocess.run(
             ["uv", "python", "install", "pypy3.10"],
             check=True,
         )
 
-        pythons = list(get_uv_pythons())
+        pythons = list(get_uv_pythons(finder=temp_finder))
         assert len(pythons) == 1
         assert pythons[0].version >= (3, 10, 14)
         assert pythons[0].implementation == "pypy"

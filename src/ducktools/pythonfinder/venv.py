@@ -36,7 +36,7 @@ from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 
 from .shared import (
     PythonInstall,
-    get_install_details,
+    DetailFinder,
     version_str_to_tuple,
     version_tuple_to_str,
 )
@@ -124,9 +124,15 @@ class PythonVEnv(Prefab):
     def parent_exists(self) -> bool:
         return os.path.exists(self.parent_executable)
 
-    def get_parent_install(self, cache: list[PythonInstall] | None = None) -> PythonInstall | None:
+    def get_parent_install(
+        self,
+        cache: list[PythonInstall] | None = None,
+        finder: DetailFinder | None = None,
+    ) -> PythonInstall | None:
         install = None
         cache = [] if cache is None else cache
+
+        finder = DetailFinder() if finder is None else finder
 
         if self.parent_exists:
             exe = self.parent_executable
@@ -138,7 +144,8 @@ class PythonVEnv(Prefab):
                     break
 
             if install is None:
-                install = get_install_details(exe)
+                with finder:
+                    install = finder.get_install_details(exe)
 
         return install
 

@@ -70,13 +70,13 @@ def test_get_pyenv_root_backup():
     assert pyenv_root == "path/to/pyenv"
 
 
-def test_no_versions_folder():
+def test_no_versions_folder(temp_finder):
     with patch("os.path.exists") as exists_mock:
         exists_mock.return_value = False
-        assert list(get_pyenv_pythons()) == []
+        assert list(get_pyenv_pythons(finder=temp_finder)) == []
 
 
-def test_mock_versions_folder():
+def test_mock_versions_folder(temp_finder):
     mock_dir_entry = Mock(os.DirEntry)
 
     out_ver = "3.12.1"
@@ -94,13 +94,13 @@ def test_mock_versions_folder():
         exists_mock.return_value = True
         scandir_mock.return_value = iter([mock_dir_entry])
 
-        python_versions = list(get_pyenv_pythons(versions_folder="~/fake/versions"))
+        python_versions = list(get_pyenv_pythons(versions_folder="~/fake/versions", finder=temp_finder))
 
     assert python_versions == [PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_fs_versions_win(fs):
+def test_fs_versions_win(fs, temp_finder):
     # Test with folders in fake file system
 
     tmpdir = "c:\\fake_folder"
@@ -111,13 +111,13 @@ def test_fs_versions_win(fs):
     fs.create_dir(py_folder)
     fs.create_file(py_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir))
+    versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
 
     assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_32bit_version(fs):
+def test_32bit_version(fs, temp_finder):
     # Test with folders in fake file system
 
     tmpdir = "c:\\fake_folder"
@@ -128,7 +128,7 @@ def test_32bit_version(fs):
     fs.create_dir(py_folder)
     fs.create_file(py_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir))
+    versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
 
     assert versions == [
         PythonInstall.from_str(version="3.12.1", executable=py_exe, architecture="32bit", managed_by="pyenv")
@@ -136,7 +136,7 @@ def test_32bit_version(fs):
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_invalid_ver_win(fs, uses_details_script):
+def test_invalid_ver_win(fs, uses_details_script, temp_finder):
     # Ignore non-standard versions
 
     pyenv_fld = "C:\\Fake_Folder"
@@ -160,14 +160,14 @@ def test_invalid_ver_win(fs, uses_details_script):
     fs.create_file(py3_exe)
 
     with patch("subprocess.run") as run_mock:
-        versions = list(get_pyenv_pythons(pyenv_fld))
+        versions = list(get_pyenv_pythons(pyenv_fld, finder=temp_finder))
         run_mock.assert_not_called()
 
     assert versions == []
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
-def test_fs_versions_nix(fs):
+def test_fs_versions_nix(fs, temp_finder):
     # Test folders in fake file system
 
     tmpdir = "~/.pyenv/versions"
@@ -179,13 +179,13 @@ def test_fs_versions_nix(fs):
     fs.create_dir(os.path.join(py_folder, "bin"))
     fs.create_file(py_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir))
+    versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
 
     assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
-def test_invalid_ver_nix(fs, uses_details_script):
+def test_invalid_ver_nix(fs, uses_details_script, temp_finder):
     # Test folders in fake file system
 
     tmpdir = "~/.pyenv/versions"
@@ -213,18 +213,18 @@ def test_invalid_ver_nix(fs, uses_details_script):
 
     with patch("subprocess.run") as run_mock:
         run_mock.side_effect = OSError("Failure")
-        versions = list(get_pyenv_pythons(tmpdir))
+        versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
         assert run_mock.call_count == 3
 
     assert versions == []
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
-def test_pypy_version(fs):
+def test_pypy_version(fs, temp_finder):
     # Test pypy version retrieval
 
     ver_folder = "pypy3.10-7.3.15"
-    tmpdir = "~/.pyenv/versions"
+    tmpdir = os.path.expanduser("~/.pyenv/versions")
 
     mock_output = textwrap.dedent(
         """
@@ -239,16 +239,17 @@ def test_pypy_version(fs):
     py_folder = os.path.join(tmpdir, ver_folder)
     py_exe = os.path.join(py_folder, "bin/python")
 
+    fs.add_real_file(details_script.__file__)
     fs.create_dir(py_folder)
     fs.create_dir(os.path.join(py_folder, "bin"))
     fs.create_file(py_exe)
 
     with patch("subprocess.run") as run_cmd:
         run_cmd.return_value.stdout = mock_output
-        versions = list(get_pyenv_pythons(tmpdir))
+        versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
 
         run_cmd.assert_called_once_with(
-            [py_exe, "-"],
+            [os.path.abspath(py_exe), "-"],
             input=details_text,
             capture_output=True,
             text=True,
