@@ -35,7 +35,10 @@ def version_str_to_tuple(version):
 
     parsed_version = re.fullmatch(FULL_PY_VER_RE, version)
     if parsed_version is None:
-        raise ValueError(f"'version' must be a valid Python version string, not {version!r}")
+        raise ValueError(
+            "'version' must be a valid Python version string, "
+            + "not {version!r}".format(version=version)
+        )
 
     major, minor, micro, releaselevel, serial = parsed_version.groups()
 
