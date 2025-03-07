@@ -199,6 +199,8 @@ class DetailFinder(Prefab):
         with open(self.cache_path, 'w') as f:
             _laz.json.dump(self.raw_cache, f, indent=4)
 
+        self._dirty_cache = False
+
     def clear_invalid_runtimes(self):
         """
         Remove cache entries where the python.exe no longer exists
