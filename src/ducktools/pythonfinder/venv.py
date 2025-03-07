@@ -144,8 +144,8 @@ class PythonVEnv(Prefab):
                     break
 
             if install is None:
-                install = finder.get_install_details(exe)
-                finder.save()
+                with finder:
+                    install = finder.get_install_details(exe)
 
         return install
 

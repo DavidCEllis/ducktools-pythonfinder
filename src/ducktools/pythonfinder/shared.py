@@ -160,14 +160,28 @@ class DetailFinder(Prefab):
     cache_path: str = DETAILS_CACHE_PATH
     details_script: DetailsScript = attribute(default_factory=DetailsScript)
 
+    # Stores the dict loaded from the JSON file without processing
     _raw_cache: dict | None = attribute(default=None, private=True)
+
+    # Indicates if the cache is known to have changed
     _dirty_cache: bool = attribute(default=False, private=True)
 
+    # Increased each re-entry to the context manager
+    # Decreased on exit
+    # Save should only occur when all contexts exit
+    _context_level: int = attribute(default=0, private=True)
+
     def __enter__(self):
+        self._context_level += 1
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type in {None, GeneratorExit}:
+        self._context_level -= 1
+        if (
+            exc_type in {None, GeneratorExit}
+            and self._dirty_cache
+            and self._context_level == 0
+        ):
             self.save()
 
     @property
@@ -181,11 +195,9 @@ class DetailFinder(Prefab):
         return self._raw_cache
 
     def save(self):
-        # Only save if the cache has changed
-        if self._dirty_cache:
-            os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
-            with open(self.cache_path, 'w') as f:
-                _laz.json.dump(self.raw_cache, f, indent=4)
+        os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
+        with open(self.cache_path, 'w') as f:
+            _laz.json.dump(self.raw_cache, f, indent=4)
 
     def clear_invalid_runtimes(self):
         """
@@ -428,6 +440,7 @@ def get_folder_pythons(
 
 # UV Specific finder
 def get_uv_python_path() -> str | None:
+    # Attempt to get cache
     try:
         with open(INSTALLER_CACHE_PATH) as f:
             installer_cache = _laz.json.load(f)
@@ -438,6 +451,7 @@ def get_uv_python_path() -> str | None:
     if uv_python_dir and os.path.exists(uv_python_dir):
         return uv_python_dir
 
+    # Cache failed
     try:
         uv_python_find = _laz.subprocess.run(
             ["uv", "python", "dir"],
@@ -451,6 +465,7 @@ def get_uv_python_path() -> str | None:
         # remove newline
         uv_python_dir = uv_python_find.stdout.strip()
 
+    # Fill cache and update the cache file
     installer_cache["uv"] = uv_python_dir
     os.makedirs(os.path.dirname(INSTALLER_CACHE_PATH), exist_ok=True)
     with open(INSTALLER_CACHE_PATH, 'w') as f:
