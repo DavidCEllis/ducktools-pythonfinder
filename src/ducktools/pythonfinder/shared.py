@@ -39,6 +39,7 @@ _laz = LazyImporter(
         ModuleImport("json"),
         ModuleImport("platform"),
         ModuleImport("re"),
+        ModuleImport("shutil"),
         ModuleImport("subprocess"),
         ModuleImport("tempfile"),
         ModuleImport("zipfile"),
@@ -82,6 +83,10 @@ else:
 CACHE_VERSION = 1
 DETAILS_CACHE_PATH = os.path.join(CACHE_FOLDER, f"runtime_cache_v{CACHE_VERSION}.json")
 INSTALLER_CACHE_PATH = os.path.join(CACHE_FOLDER, "installer_details.json")
+
+
+def purge_caches(cache_folder=CACHE_FOLDER):
+    _laz.shutil.rmtree(cache_folder, ignore_errors=True)
 
 
 def version_str_to_tuple(version):

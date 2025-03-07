@@ -28,6 +28,7 @@ import os
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 from ducktools.pythonfinder import list_python_installs, __version__
+from ducktools.pythonfinder.shared import purge_caches
 
 _laz = LazyImporter(
     [
@@ -121,6 +122,11 @@ def get_parser():
     )
 
     subparsers = parser.add_subparsers(dest="command", required=False)
+
+    clear_cache = subparsers.add_parser(
+        "clear-cache",
+        help="Clear the cache of Python install details"
+    )
 
     online = subparsers.add_parser(
         "online",
@@ -305,7 +311,9 @@ def main():
         parser = get_parser()
         vals = parser.parse_args(sys.argv[1:])
 
-        if vals.command == "online":
+        if vals.command == "clear-cache":
+            purge_caches()
+        elif vals.command == "online":
             system = vals.system if vals.system else _laz.platform.system()
             machine = vals.machine if vals.machine else _laz.platform.machine()
             try:
