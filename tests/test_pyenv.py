@@ -142,7 +142,12 @@ def test_fs_versions_nix(fs, temp_finder):
     fs.create_dir(os.path.join(py_folder, "bin"))
     fs.create_file(py_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+    with patch.object(DetailFinder, "get_install_details") as details_mock:
+        return_val = PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")
+        details_mock.return_value = return_val
+
+        versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+        details_mock.assert_called_once_with(py_exe, managed_by="pyenv")
 
     assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")]
 
