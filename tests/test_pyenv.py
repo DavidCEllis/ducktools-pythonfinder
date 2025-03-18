@@ -90,11 +90,10 @@ def test_mock_versions_folder(temp_finder):
     mock_dir_entry.name = out_ver
     mock_dir_entry.path = os.path.join(versions_folder, out_ver)
 
-    with (
-        patch("os.path.exists") as exists_mock,
-        patch("os.scandir") as scandir_mock,
-        patch.object(DetailFinder, "get_install_details") as details_mock,
-    ):
+    with patch("os.path.exists") as exists_mock, \
+            patch("os.scandir") as scandir_mock, \
+            patch.object(DetailFinder, "get_install_details") as details_mock:
+
         return_val = PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")
         details_mock.return_value = return_val
         exists_mock.return_value = True
