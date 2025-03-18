@@ -31,7 +31,7 @@ from pathlib import Path
 import pytest
 from unittest.mock import patch, Mock
 
-from ducktools.pythonfinder.shared import PythonInstall
+from ducktools.pythonfinder.shared import PythonInstall, DetailFinder
 from ducktools.pythonfinder import details_script
 
 if sys.platform == "win32":
@@ -90,13 +90,20 @@ def test_mock_versions_folder(temp_finder):
     mock_dir_entry.name = out_ver
     mock_dir_entry.path = os.path.join(versions_folder, out_ver)
 
-    with patch("os.path.exists") as exists_mock, patch("os.scandir") as scandir_mock:
+    with patch("os.path.exists") as exists_mock, \
+            patch("os.scandir") as scandir_mock, \
+            patch.object(DetailFinder, "get_install_details") as details_mock:
+
+        return_val = PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")
+        details_mock.return_value = return_val
         exists_mock.return_value = True
         scandir_mock.return_value = iter([mock_dir_entry])
 
-        python_versions = list(get_pyenv_pythons(versions_folder="~/fake/versions", finder=temp_finder))
+        python_versions = list(get_pyenv_pythons(versions_folder=versions_folder, finder=temp_finder))
 
-    assert python_versions == [PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")]
+        details_mock.assert_called_once_with(out_executable, managed_by="pyenv")
+
+    assert python_versions == [return_val]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
@@ -111,59 +118,14 @@ def test_fs_versions_win(fs, temp_finder):
     fs.create_dir(py_folder)
     fs.create_file(py_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+    with patch.object(DetailFinder, "get_install_details") as details_mock:
+        return_val = PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")
+        details_mock.return_value = return_val
+        versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+
+        details_mock.assert_called_once_with(py_exe, managed_by="pyenv")
 
     assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")]
-
-
-@pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_32bit_version(fs, temp_finder):
-    # Test with folders in fake file system
-
-    tmpdir = "c:\\fake_folder"
-
-    py_folder = os.path.join(tmpdir, "3.12.1-win32")
-    py_exe = os.path.join(py_folder, "python.exe")
-
-    fs.create_dir(py_folder)
-    fs.create_file(py_exe)
-
-    versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
-
-    assert versions == [
-        PythonInstall.from_str(version="3.12.1", executable=py_exe, architecture="32bit", managed_by="pyenv")
-    ]
-
-
-@pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
-def test_invalid_ver_win(fs, uses_details_script, temp_finder):
-    # Ignore non-standard versions
-
-    pyenv_fld = "C:\\Fake_Folder"
-
-    py_folder = os.path.join(pyenv_fld, "external-python3.12.1")
-    py_exe = os.path.join(py_folder, "python.exe")
-
-    fs.create_dir(py_folder)
-    fs.create_file(py_exe)
-
-    py2_folder = os.path.join(pyenv_fld, "ext3.13.0")
-    py2_exe = os.path.join(py2_folder, "python.exe")
-
-    fs.create_dir(py2_folder)
-    fs.create_file(py2_exe)
-
-    py3_folder = os.path.join(pyenv_fld, "invalid-version-3.12.1")
-    py3_exe = os.path.join(py3_folder, "python.exe")
-
-    fs.create_dir(py3_folder)
-    fs.create_file(py3_exe)
-
-    with patch("subprocess.run") as run_mock:
-        versions = list(get_pyenv_pythons(pyenv_fld, finder=temp_finder))
-        run_mock.assert_not_called()
-
-    assert versions == []
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
@@ -179,7 +141,12 @@ def test_fs_versions_nix(fs, temp_finder):
     fs.create_dir(os.path.join(py_folder, "bin"))
     fs.create_file(py_exe)
 
-    versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+    with patch.object(DetailFinder, "get_install_details") as details_mock:
+        return_val = PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")
+        details_mock.return_value = return_val
+
+        versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+        details_mock.assert_called_once_with(py_exe, managed_by="pyenv")
 
     assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")]
 

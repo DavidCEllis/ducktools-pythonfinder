@@ -115,11 +115,6 @@ def get_parser():
         description="Discover base Python installs",
     )
     parser.add_argument("-V", "--version", action="version", version=__version__)
-    parser.add_argument(
-        "--fast",
-        action="store_true",
-        help="Skip Python installs that need to be launched to obtain metadata"
-    )
 
     subparsers = parser.add_subparsers(dest="command", required=False)
 
@@ -169,7 +164,6 @@ def display_local_installs(
     min_ver=None,
     max_ver=None,
     compatible=None,
-    query_executables=True,
 ):
     if min_ver:
         min_ver = tuple(int(i) for i in min_ver.split("."))
@@ -178,7 +172,7 @@ def display_local_installs(
     if compatible:
         compatible = tuple(int(i) for i in compatible.split("."))
 
-    installs = list_python_installs(query_executables=query_executables)
+    installs = list_python_installs()
 
     headings = ["Version", "Executable Location"]
 
@@ -333,7 +327,6 @@ def main():
                 min_ver=vals.min,
                 max_ver=vals.max,
                 compatible=vals.compatible,
-                query_executables=not vals.fast,
             )
     else:
         # No arguments to parse

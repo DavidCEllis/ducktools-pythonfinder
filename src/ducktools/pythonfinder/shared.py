@@ -225,12 +225,18 @@ class DetailFinder(Prefab):
         self._raw_cache = {}
         self._dirty_cache = True
 
-    def query_install(self, exe_path: str, managed_by: str | None = None) -> PythonInstall | None:
+    def query_install(
+        self,
+        exe_path: str,
+        managed_by: str | None = None,
+        metadata: dict | None = None,
+    ) -> PythonInstall | None:
         """
         Query the details of a Python install directly
 
         :param exe_path: Path to the runtime .exe
         :param managed_by: Which tool manages this install (if any)
+        :param metadata: Dictionary of install metadata
         :return: a PythonInstall if one exists at the exe Path
         """
         try:
@@ -273,9 +279,19 @@ class DetailFinder(Prefab):
         except _laz.json.JSONDecodeError:
             return None
 
-        return PythonInstall.from_json(**output, managed_by=managed_by)
+        if metadata:
+            output["metadata"].update(metadata)
 
-    def get_install_details(self, exe_path: str, managed_by=None) -> PythonInstall | None:
+        install = PythonInstall.from_json(**output, managed_by=managed_by)
+
+        return install
+
+    def get_install_details(
+        self,
+        exe_path: str,
+        managed_by: str | None = None,
+        metadata: dict | None = None,
+    ) -> PythonInstall | None:
         exe_path = os.path.abspath(exe_path)
         mtime = os.stat(exe_path).st_mtime
 
@@ -287,7 +303,7 @@ class DetailFinder(Prefab):
                 self.raw_cache.pop(exe_path)
 
         if install is None:
-            install = self.query_install(exe_path, managed_by)
+            install = self.query_install(exe_path, managed_by, metadata)
             if install:
                 self.raw_cache[exe_path] = {
                     "mtime": mtime,
@@ -416,6 +432,7 @@ def get_folder_pythons(
     base_folder: str | os.PathLike,
     basenames: tuple[str] = ("python", "pypy"),
     finder: DetailFinder | None = None,
+    managed_by: str | None = None,
 ):
     regexes = [_python_exe_regex(name) for name in basenames]
 
@@ -440,7 +457,7 @@ def get_folder_pythons(
                         continue
                 else:
                     p = file_path.path
-                install = finder.get_install_details(p)
+                install = finder.get_install_details(p, managed_by=managed_by)
                 if install:
                     yield install
 
@@ -483,7 +500,6 @@ def get_uv_python_path() -> str | None:
 
 def _implementation_from_uv_dir(
     direntry: os.DirEntry,
-    query_executables: bool = True,
     finder: DetailFinder | None = None,
 ) -> PythonInstall | None:
     python_exe = "python.exe" if sys.platform == "win32" else "bin/python"
@@ -493,35 +509,12 @@ def _implementation_from_uv_dir(
     finder = DetailFinder() if finder is None else finder
 
     if os.path.exists(python_path):
-        if match := _laz.re.fullmatch(UV_PYTHON_RE, direntry.name):
-            implementation, version, extra, platform, arch = match.groups()
-            metadata = {
-                "freethreaded": "freethreaded" in extra,
-            }
-
-            try:
-                if implementation in {"cpython"}:
-                    install = PythonInstall.from_str(
-                        version=version,
-                        executable=python_path,
-                        architecture="32bit" if arch in {"i686", "armv7"} else "64bit",
-                        implementation=implementation,
-                        metadata=metadata,
-                        managed_by="Astral",
-                    )
-            except ValueError:
-                pass
-
-        if install is None:
-            # Directory name format has changed or this is an alternate implementation
-            # Slow backup - ask python itself
-            if query_executables:
-                install = finder.get_install_details(python_path, managed_by="Astral")
+        install = finder.get_install_details(python_path, managed_by="Astral")
 
     return install
 
 
-def get_uv_pythons(query_executables=True, finder=None) -> Iterator[PythonInstall]:
+def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
     # This takes some shortcuts over the regular pythonfinder
     # As the UV folders give the python version and the implementation
     if uv_python_path := get_uv_python_path():
@@ -532,6 +525,6 @@ def get_uv_pythons(query_executables=True, finder=None) -> Iterator[PythonInstal
                 for f in fld:
                     if (
                         f.is_dir()
-                        and (install := _implementation_from_uv_dir(f, query_executables, finder=finder))
+                        and (install := _implementation_from_uv_dir(f, finder=finder))
                     ):
                         yield install
