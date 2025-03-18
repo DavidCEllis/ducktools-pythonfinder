@@ -210,7 +210,7 @@ def test_changed_stat_invalidates(run_mock, temp_finder):
 
             assert temp_finder.raw_cache[fake_abspath]["mtime"] == 1739886571
 
-            querymock.assert_called_with(fake_abspath, None)
+            querymock.assert_called_with(fake_abspath, None, None)
             querymock.reset_mock()
 
             with temp_finder:

@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+from __future__ import annotations
 # Find platform python versions
 
 __all__ = [
@@ -43,10 +43,10 @@ else:
     from .linux import get_python_installs
 
 
-def list_python_installs(*, query_executables: bool = True, finder: "DetailFinder | None" = None):
+def list_python_installs(*, finder: DetailFinder | None = None):
     finder = DetailFinder() if finder is None else finder
     return sorted(
-        get_python_installs(query_executables=query_executables, finder=finder),
+        get_python_installs(finder=finder),
         reverse=True,
         key=lambda x: (x.version[3], *x.version[:3], x.version[4])
     )

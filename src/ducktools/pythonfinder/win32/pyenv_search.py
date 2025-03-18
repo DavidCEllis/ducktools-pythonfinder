@@ -39,7 +39,6 @@ def get_pyenv_root() -> str | None:
 def get_pyenv_pythons(
     versions_folder: str | os.PathLike | None = None,
     *,
-    query_executables: bool = True,
     finder: DetailFinder | None = None,
 ) -> Iterator[PythonInstall]:
 
@@ -56,51 +55,14 @@ def get_pyenv_pythons(
         for p in os.scandir(versions_folder):
             path_base = os.path.basename(p.path)
 
-            if query_executables:
-                # Check for pypy/graalpy
-                if path_base.startswith("pypy"):
-                    executable = os.path.join(p.path, "pypy.exe")
-                    if os.path.exists(executable):
-                        yield finder.get_install_details(executable, managed_by="pyenv")
-                        continue
-                elif path_base.startswith("graalpy"):
-                    # Graalpy exe in bin subfolder
-                    executable = os.path.join(p.path, "bin", "graalpy.exe")
-                    if os.path.exists(executable):
-                        yield finder.get_install_details(executable, managed_by="pyenv")
-                        continue
-
-            # Regular CPython
-            executable = os.path.join(p.path, "python.exe")
+            if path_base.startswith("pypy"):
+                executable = os.path.join(p.path, "pypy.exe")
+            elif path_base.startswith("graalpy"):
+                # Graalpy exe in bin subfolder
+                executable = os.path.join(p.path, "bin", "graalpy.exe")
+            else:
+                # Try python.exe
+                executable = os.path.join(p.path, "python.exe")
 
             if os.path.exists(executable):
-                split_version = p.name.split("-")
-
-                # If there are 1 or 2 arguments this is a recognised version
-                # Otherwise it is unrecognised
-                if len(split_version) == 2:
-                    version, arch = split_version
-
-                    # win32 in pyenv name means 32 bit python install
-                    # 'arm' is the only alternative which will be 64bit
-                    arch = "32bit" if arch == "win32" else "64bit"
-                    try:
-                        yield PythonInstall.from_str(
-                            version=version,
-                            executable=executable,
-                            architecture=arch,
-                            managed_by="pyenv",
-                        )
-                    except ValueError:
-                        pass
-                elif len(split_version) == 1:
-                    version = split_version[0]
-                    try:
-                        yield PythonInstall.from_str(
-                            version=version,
-                            executable=executable,
-                            architecture="64bit",
-                            managed_by="pyenv",
-                        )
-                    except ValueError:
-                        pass
+                yield finder.get_install_details(executable, managed_by="pyenv")

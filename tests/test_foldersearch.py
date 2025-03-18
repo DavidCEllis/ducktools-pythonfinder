@@ -119,7 +119,7 @@ def test_get_folder_pythons(fs, temp_finder):
     fs.create_file(pypy_exe)
     fs.create_file(non_python_file)
 
-    def mock_func(pth):
+    def mock_func(pth, managed_by=None, metadata=None):
         return pth
 
     with patch.object(
@@ -130,8 +130,8 @@ def test_get_folder_pythons(fs, temp_finder):
 
         get_dets.assert_has_calls(
             [
-                call(python_exe),
-                call(pypy_exe),
+                call(python_exe, managed_by=None),
+                call(pypy_exe, managed_by=None),
             ],
             any_order=True,
         )

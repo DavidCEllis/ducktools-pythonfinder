@@ -73,7 +73,6 @@ def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonIn
 
 def get_python_installs(
     *,
-    query_executables: bool = True,
     finder: DetailFinder | None = None,
 ) -> Iterator[PythonInstall]:
     listed_pythons = set()
@@ -81,12 +80,10 @@ def get_python_installs(
     finder = DetailFinder() if finder is None else finder
 
     chain_commands = [
-        get_pyenv_pythons(query_executables=query_executables, finder=finder),
-        get_uv_pythons(query_executables=query_executables, finder=finder),
+        get_pyenv_pythons(finder=finder),
+        get_uv_pythons(finder=finder),
+        get_path_pythons(finder=finder),
     ]
-    if query_executables:
-        chain_commands.append(get_path_pythons(finder=finder))
-
     with finder:
         for py in itertools.chain.from_iterable(chain_commands):
             if py.executable not in listed_pythons:

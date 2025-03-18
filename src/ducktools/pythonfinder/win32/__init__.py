@@ -32,7 +32,6 @@ from .registry_search import get_registered_pythons
 
 def get_python_installs(
     *,
-    query_executables: bool = True,
     finder: DetailFinder | None = None
 ) -> Iterator[PythonInstall]:
     listed_installs = set()
@@ -42,8 +41,8 @@ def get_python_installs(
     with finder:
         for py in itertools.chain(
             get_registered_pythons(),
-            get_pyenv_pythons(query_executables=query_executables, finder=finder),
-            get_uv_pythons(query_executables=query_executables, finder=finder),
+            get_pyenv_pythons(finder=finder),
+            get_uv_pythons(finder=finder),
         ):
             if py.executable not in listed_installs:
                 yield py
