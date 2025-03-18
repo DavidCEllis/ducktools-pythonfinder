@@ -90,7 +90,6 @@ def get_details():
                 freethreaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
                 metadata["freethreaded"] = freethreaded
 
-
     install = dict(
         version=list(sys.version_info),
         executable=sys.executable,
