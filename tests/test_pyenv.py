@@ -94,9 +94,16 @@ def test_mock_versions_folder(temp_finder):
             patch("os.scandir") as scandir_mock, \
             patch.object(DetailFinder, "get_install_details") as details_mock:
 
+        assert os.path.exists is exists_mock
+
         return_val = PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")
         details_mock.return_value = return_val
-        exists_mock.return_value = True
+
+        def false_on_venv_check(pth):
+            # Need to return False on the venv check, but True on all other exists checks
+            return False if pth.endswith("pyvenv.cfg") else True
+
+        exists_mock.side_effect = false_on_venv_check
         scandir_mock.return_value = iter([mock_dir_entry])
 
         python_versions = list(get_pyenv_pythons(versions_folder=versions_folder, finder=temp_finder))
@@ -104,6 +111,40 @@ def test_mock_versions_folder(temp_finder):
         details_mock.assert_called_once_with(out_executable, managed_by="pyenv")
 
     assert python_versions == [return_val]
+
+
+def test_mock_folder_skip_venv(temp_finder):
+    # If the venv check returns true, make sure the folder is skipped
+    mock_dir_entry = Mock(os.DirEntry)
+
+    out_ver = "3.12.1"
+    if sys.platform == "win32":
+        versions_folder = os.path.join("c:", "fake", "versions")
+        out_executable = os.path.join(versions_folder, out_ver, "python.exe")
+    else:
+        versions_folder = "~/fake/versions"
+        out_executable = os.path.join(versions_folder, out_ver, "bin/python")
+
+    mock_dir_entry.name = out_ver
+    mock_dir_entry.path = os.path.join(versions_folder, out_ver)
+
+    with patch("os.path.exists") as exists_mock, \
+            patch("os.scandir") as scandir_mock, \
+            patch.object(DetailFinder, "get_install_details") as details_mock:
+
+        assert os.path.exists is exists_mock
+
+        return_val = PythonInstall.from_str(version=out_ver, executable=out_executable, managed_by="pyenv")
+        details_mock.return_value = return_val
+
+        exists_mock.return_value = True
+        scandir_mock.return_value = iter([mock_dir_entry])
+
+        python_versions = list(get_pyenv_pythons(versions_folder=versions_folder, finder=temp_finder))
+
+        details_mock.assert_not_called()
+
+    assert python_versions == []
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test for Windows only")
@@ -125,7 +166,15 @@ def test_fs_versions_win(fs, temp_finder):
 
         details_mock.assert_called_once_with(py_exe, managed_by="pyenv")
 
-    assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")]
+        assert versions == [return_val]
+
+        # Check presence of a 'pyvenv.cfg' ignores the folder
+        details_mock.reset_mock()
+        fs.create_file(os.path.join(py_folder, "pyvenv.cfg"))
+
+        versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+        details_mock.assert_not_called()
+        assert versions == []
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")
@@ -148,7 +197,15 @@ def test_fs_versions_nix(fs, temp_finder):
         versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
         details_mock.assert_called_once_with(py_exe, managed_by="pyenv")
 
-    assert versions == [PythonInstall.from_str(version="3.12.1", executable=py_exe, managed_by="pyenv")]
+        assert versions == [return_val]
+
+        details_mock.reset_mock()
+
+        # Test the same folder is ignored if a 'pyvenv.cfg' file is discovered
+        fs.create_file(os.path.join(py_folder, "pyvenv.cfg"))
+        versions = list(get_pyenv_pythons(tmpdir, finder=temp_finder))
+        details_mock.assert_not_called()
+        assert versions == []
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Test for non-Windows only")

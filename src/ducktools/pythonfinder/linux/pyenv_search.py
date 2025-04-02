@@ -91,6 +91,11 @@ def get_pyenv_pythons(
 
     with finder:
         for p in sorted(os.scandir(versions_folder), key=lambda x: x.path):
+            # Don't include folders that are venvs
+            venv_indicator = os.path.join(p.path, "pyvenv.cfg")
+            if os.path.exists(venv_indicator):
+                continue
+
             executable = os.path.join(p.path, "bin/python")
             if os.path.exists(executable):
                 install = finder.get_install_details(executable, managed_by="pyenv")
