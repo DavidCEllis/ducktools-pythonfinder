@@ -53,6 +53,13 @@ def get_pyenv_pythons(
 
     with finder:
         for p in os.scandir(versions_folder):
+            # On windows, venv folders usually have the python.exe in \Scripts\
+            # while runtimes have it in the base folder so venvs shouldn't be disovered
+            # but exclude them early anyway
+            venv_indicator = os.path.join(p.path, "pyvenv.cfg")
+            if os.path.exists(venv_indicator):
+                continue
+
             path_base = os.path.basename(p.path)
 
             if path_base.startswith("pypy"):
