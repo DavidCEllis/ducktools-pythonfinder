@@ -72,4 +72,6 @@ def get_pyenv_pythons(
                 executable = os.path.join(p.path, "python.exe")
 
             if os.path.exists(executable):
-                yield finder.get_install_details(executable, managed_by="pyenv")
+                install = finder.get_install_details(executable, managed_by="pyenv")
+                if install:
+                    yield install

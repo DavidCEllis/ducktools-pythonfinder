@@ -113,11 +113,13 @@ def get_registered_pythons(finder: DetailFinder | None = None) -> Iterator[Pytho
                             if python_path:
                                 # Pyenv puts architecture information in the Version value for some reason
                                 if os.path.isfile(python_path):
-                                    yield finder.get_install_details(
+                                    details = finder.get_install_details(
                                         python_path,
                                         managed_by=metadata["Company"],
                                         metadata=metadata,
                                     )
+                                    if details:
+                                        yield details
 
             finally:
                 if base_key:
