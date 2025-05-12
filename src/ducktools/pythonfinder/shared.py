@@ -502,14 +502,23 @@ def _implementation_from_uv_dir(
     direntry: os.DirEntry,
     finder: DetailFinder | None = None,
 ) -> PythonInstall | None:
-    python_exe = "python.exe" if sys.platform == "win32" else "bin/python"
-    python_path = os.path.join(direntry, python_exe)
+    if sys.platform == "win32":
+        python_paths = [
+            os.path.join(direntry, "python.exe"),
+            os.path.join(direntry, "bin/python.exe"),  # graalpy
+        ]
+    else:
+        python_paths = [
+            os.path.join(direntry, "bin/python")
+        ]
 
     install: PythonInstall | None = None
     finder = DetailFinder() if finder is None else finder
 
-    if os.path.exists(python_path):
-        install = finder.get_install_details(python_path, managed_by="Astral")
+    for pth in python_paths:
+        if os.path.exists(pth):
+            install = finder.get_install_details(pth, managed_by="Astral")
+            break
 
     return install
 
