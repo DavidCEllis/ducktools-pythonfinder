@@ -37,6 +37,14 @@ from ..shared import (
 from .pyenv_search import get_pyenv_pythons, get_pyenv_root
 
 
+KNOWN_MANAGED_PATHS = {
+    "/usr/bin": "OS",
+    "/bin": "OS",
+    "/usr/sbin": "OS",
+    "/sbin": "OS",
+}
+
+
 def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonInstall]:
     exe_names = set()
 
@@ -46,7 +54,7 @@ def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonIn
 
     excluded_folders = [pyenv_root, uv_root]
 
-    finder = DetailFinder if finder is None else finder
+    finder = DetailFinder() if finder is None else finder
 
     for fld in path_folders:
         # Don't retrieve pyenv installs
@@ -63,6 +71,9 @@ def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonIn
             continue
 
         for install in get_folder_pythons(fld, finder=finder):
+            if manager := KNOWN_MANAGED_PATHS.get(os.path.dirname(install.executable)):
+                install.managed_by = manager
+
             name = os.path.basename(install.executable)
             if name in exe_names:
                 install.shadowed = True
