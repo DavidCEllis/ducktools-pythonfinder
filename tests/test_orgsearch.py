@@ -1,18 +1,18 @@
 # ducktools-pythonfinder
 # MIT License
-# 
+#
 # Copyright (c) 2023-2025 David C Ellis
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -78,7 +78,7 @@ class TestWindows:
         s = searcher(self.system, self.machine)
 
         latest_312 = s.latest_binary_match(SpecifierSet("~=3.12.0"))
-        assert latest_312.version == "3.12.5"
+        assert latest_312.version == "3.12.10"
 
         before_312 = s.latest_binary_match(SpecifierSet("<3.12"))
         assert before_312.version == "3.11.9"
@@ -88,12 +88,13 @@ class TestWindows:
 
         latest_310 = s.latest_minor_binaries(SpecifierSet(">=3.10.0"))
 
-        assert len(latest_310) == 3
+        assert len(latest_310) == 4
 
         # Check releases in reverse order
-        assert latest_310[0].version == "3.12.5"
-        assert latest_310[1].version == "3.11.9"
-        assert latest_310[2].version == "3.10.11"
+        assert latest_310[0].version == "3.13.3"
+        assert latest_310[1].version == "3.12.10"
+        assert latest_310[2].version == "3.11.9"
+        assert latest_310[3].version == "3.10.11"
 
     def test_all_matching_binaries(self, searcher):
         s = searcher(self.system, self.machine)
@@ -102,7 +103,7 @@ class TestWindows:
 
         # releases of each minor version since 3.8
         # v3.9.3 was yanked for incompatibilities
-        assert len(all_bins) == 52
+        assert len(all_bins) == 61
 
     def test_all_bin_extensions(self, searcher):
         # Check all extensions provided match one of the supported set
@@ -118,14 +119,14 @@ class TestWindows:
     def test_prerelease(self, searcher):
         s = searcher(self.system, self.machine)
         match = s.latest_binary_match(SpecifierSet(">=3.12"), prereleases=True)
-        assert match.version == "3.13.0rc1"
+        assert match.version == "3.14.0b2"
         assert match.is_prerelease is True
 
     def test_latest_download(self, searcher):
         s = searcher(self.system, self.machine)
         download = s.latest_python_download()
-        assert download.version == "3.12.5"
-        assert download.url.endswith("3.12.5-amd64.exe")
+        assert download.version == "3.13.3"
+        assert download.url.endswith("3.13.3-amd64.exe")
 
 
 class TestMacOS:
@@ -136,7 +137,7 @@ class TestMacOS:
         s = searcher(self.system, self.machine)
 
         latest_312 = s.latest_binary_match(SpecifierSet("~=3.12.0"))
-        assert latest_312.version == "3.12.5"
+        assert latest_312.version == "3.12.10"
 
         before_312 = s.latest_binary_match(SpecifierSet("<3.12"))
         assert before_312.version == "3.11.9"
@@ -146,12 +147,13 @@ class TestMacOS:
 
         latest_310 = s.latest_minor_binaries(SpecifierSet(">=3.10.0"))
 
-        assert len(latest_310) == 3
+        assert len(latest_310) == 4
 
         # Check releases in reverse order
-        assert latest_310[0].version == "3.12.5"
-        assert latest_310[1].version == "3.11.9"
-        assert latest_310[2].version == "3.10.11"
+        assert latest_310[0].version == "3.13.3"
+        assert latest_310[1].version == "3.12.10"
+        assert latest_310[2].version == "3.11.9"
+        assert latest_310[3].version == "3.10.11"
 
     def test_all_matching_binaries(self, searcher):
         s = searcher(self.system, self.machine)
@@ -161,7 +163,7 @@ class TestMacOS:
         # releases of each minor version since 3.8
         # v3.9.3 was yanked for incompatibilities
         # MacOS has duplicates for Intel only binaries
-        assert len(all_bins) == 64
+        assert len(all_bins) == 73
 
     def test_all_bin_extensions(self, searcher):
         # Check all extensions provided match one of the supported set
@@ -177,8 +179,8 @@ class TestMacOS:
     def test_latest_download(self, searcher):
         s = searcher(self.system, self.machine)
         download = s.latest_python_download()
-        assert download.version == "3.12.5"
-        assert download.url.endswith("3.12.5-macos11.pkg")
+        assert download.version == "3.13.3"
+        assert download.url.endswith("3.13.3-macos11.pkg")
 
 
 class TestLinux:
@@ -189,22 +191,23 @@ class TestLinux:
         s = searcher(self.system, self.machine)
 
         latest_312 = s.latest_binary_match(SpecifierSet("~=3.12.0"))
-        assert latest_312.version == "3.12.5"
+        assert latest_312.version == "3.12.10"
 
         before_312 = s.latest_binary_match(SpecifierSet("<3.12"))
-        assert before_312.version == "3.11.9"
+        assert before_312.version == "3.11.12"  # Linux gets extra releases
 
     def test_latest_bins(self, searcher):
         s = searcher(self.system, self.machine)
 
         latest_310 = s.latest_minor_binaries(SpecifierSet(">=3.10.0"))
 
-        assert len(latest_310) == 3
+        assert len(latest_310) == 4
 
         # Check releases in reverse order
-        assert latest_310[0].version == "3.12.5"
-        assert latest_310[1].version == "3.11.9"
-        assert latest_310[2].version == "3.10.14"  # source only release
+        assert latest_310[0].version == "3.13.3"
+        assert latest_310[1].version == "3.12.10"
+        assert latest_310[2].version == "3.11.12"  # source only release
+        assert latest_310[3].version == "3.10.17"  # source only release
 
     def test_all_matching_binaries(self, searcher):
         s = searcher(self.system, self.machine)
@@ -214,7 +217,7 @@ class TestLinux:
         # releases of each minor version since 3.8
         # v3.9.3 was yanked for incompatibilities
         # Linux includes source releases and has multiple formats for them
-        assert len(all_bins) == 140
+        assert len(all_bins) == 178
 
     def test_all_bin_extensions(self, searcher):
         # Check all extensions provided match one of the supported set
@@ -230,5 +233,5 @@ class TestLinux:
     def test_latest_download(self, searcher):
         s = searcher(self.system, self.machine)
         download = s.latest_python_download()
-        assert download.version == "3.12.5"
-        assert download.url.endswith("3.12.5.tgz")
+        assert download.version == "3.13.3"
+        assert download.url.endswith("3.13.3.tgz")

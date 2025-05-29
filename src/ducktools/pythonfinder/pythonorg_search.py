@@ -1,18 +1,18 @@
 # ducktools-pythonfinder
 # MIT License
-# 
+#
 # Copyright (c) 2023-2025 David C Ellis
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import platform
+import re
 
 from urllib.request import urlopen
 
@@ -43,6 +44,8 @@ from ducktools.pythonfinder.shared import version_str_to_tuple
 
 RELEASE_PAGE = "https://www.python.org/api/v2/downloads/release/"
 RELEASE_FILE_PAGE = "https://www.python.org/api/v2/downloads/release_file/"
+
+PYTHON_RELEASE_RE = re.compile(R"Python \d+\.\d+\.\d+(?:(?:a|b|rc)\d)?")
 
 
 class UnsupportedError(Exception):
@@ -206,13 +209,16 @@ class PythonOrgSearch(Prefab):
     def releases(self) -> list[PythonRelease]:
         """Get all releases from python.org/api/v2/downloads/release"""
         if self._releases is None:
-            if self.release_page_cache:
-                data = json.loads(self.release_page_cache)
-            else:  # pragma: nocover
+            if not self.release_page_cache:
                 with urlopen(self.release_page) as req:
-                    data = json.load(req)
+                    self.release_page_cache = req.read().decode("utf8")
 
-            self._releases = [PythonRelease.from_dict(release) for release in data]
+            data = json.loads(self.release_page_cache)
+
+            self._releases = [
+                PythonRelease.from_dict(release) for release in data
+                if PYTHON_RELEASE_RE.fullmatch(release["name"])
+            ]
             self._releases.sort(key=lambda ver: ver.version_tuple, reverse=True)
 
         return self._releases
@@ -221,11 +227,11 @@ class PythonOrgSearch(Prefab):
     def release_files(self) -> list[PythonReleaseFile]:
         """Get all release files from python.org/api/v2/downloads/release"""
         if self._release_files is None:
-            if self.release_file_page_cache:
-                data = json.loads(self.release_file_page_cache)
-            else:  # pragma: nocover
+            if not self.release_file_page_cache:
                 with urlopen(self.release_file_page) as req:
-                    data = json.load(req)
+                    self.release_file_page_cache = req.read().decode("utf8")
+
+            data = json.loads(self.release_file_page_cache)
 
             self._release_files = [PythonReleaseFile.from_dict(relfile) for relfile in data]
         return self._release_files
