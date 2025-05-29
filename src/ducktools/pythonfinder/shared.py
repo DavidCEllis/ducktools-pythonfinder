@@ -80,7 +80,7 @@ else:
     CACHE_FOLDER = os.path.join(USER_FOLDER, ".cache", "ducktools", "pythonfinder")
 
 
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 DETAILS_CACHE_PATH = os.path.join(CACHE_FOLDER, f"runtime_cache_v{CACHE_VERSION}.json")
 INSTALLER_CACHE_PATH = os.path.join(CACHE_FOLDER, "installer_details.json")
 
@@ -321,6 +321,7 @@ class PythonInstall(Prefab):
     implementation: str = "cpython"
     managed_by: str | None = None
     metadata: dict = attribute(default_factory=dict)
+    paths: dict[str, str] = attribute(default_factory=dict)
     shadowed: bool = attribute(default=False, serialize=False)
     _implementation_version: tuple[int, int, int, str, int] | None = attribute(default=None, private=True)
 
@@ -365,8 +366,12 @@ class PythonInstall(Prefab):
         implementation: str = "cpython",
         managed_by: str | None = None,
         metadata: dict | None = None,
+        paths: dict | None = None,
     ):
         version_tuple = version_str_to_tuple(version)
+
+        metadata = {} if metadata is None else metadata
+        paths = {} if paths is None else paths
 
         # noinspection PyArgumentList
         return cls(
@@ -376,6 +381,7 @@ class PythonInstall(Prefab):
             implementation=implementation,
             managed_by=managed_by,
             metadata=metadata,
+            paths=paths,
         )
 
     @classmethod
@@ -386,10 +392,13 @@ class PythonInstall(Prefab):
         architecture,
         implementation,
         metadata,
+        paths=None,
         managed_by=None,
     ):
         if arch_ver := metadata.get(f"{implementation}_version"):
             metadata[f"{implementation}_version"] = tuple(arch_ver)
+
+        paths = {} if paths is None else paths
 
         # noinspection PyArgumentList
         return cls(
@@ -399,6 +408,7 @@ class PythonInstall(Prefab):
             implementation=implementation,
             managed_by=managed_by,
             metadata=metadata,
+            paths=paths,
         )
 
     def get_pip_version(self) -> str | None:
@@ -430,13 +440,15 @@ def _python_exe_regex(basename: str = "python"):
 
 def get_folder_pythons(
     base_folder: str | os.PathLike,
-    basenames: tuple[str] = ("python", "pypy"),
+    basenames: tuple[str, ...] = ("python", "pypy", "micropython"),
     finder: DetailFinder | None = None,
     managed_by: str | None = None,
 ):
     regexes = [_python_exe_regex(name) for name in basenames]
 
     finder = DetailFinder() if finder is None else finder
+
+    base_folder = str(base_folder)
 
     with finder, os.scandir(base_folder) as fld:
         for file_path in fld:
@@ -452,11 +464,13 @@ def get_folder_pythons(
                 p = file_path.path
                 if file_path.is_symlink():
                     # Might be a venv - look for pyvenv.cfg in parent
-                    fld = os.path.dirname(p)
-                    if os.path.exists(os.path.join(fld, "../pyvenv.cfg")):
+                    dirname = os.path.dirname(p)
+
+                    if os.path.exists(os.path.join(dirname, "../pyvenv.cfg")):
                         continue
                 else:
                     p = file_path.path
+
                 install = finder.get_install_details(p, managed_by=managed_by)
                 if install:
                     yield install

@@ -35,6 +35,7 @@ _laz = LazyImporter(
         ModuleImport("argparse"),
         ModuleImport("csv"),
         ModuleImport("subprocess"),
+        ModuleImport("sysconfig"),
         ModuleImport("platform"),
         FromImport(".pythonorg_search", "PythonOrgSearch"),
         FromImport("packaging.specifiers", "SpecifierSet"),
@@ -207,7 +208,7 @@ def display_local_installs(
             version_str = f"*{version_str}"
         elif (
             sys.prefix != sys.base_prefix
-            and os.path.commonpath([install.executable, sys.base_prefix]) == sys.base_prefix
+            and install.paths.get("stdlib") == _laz.sysconfig.get_path("stdlib")
         ):
             version_str = f"**{version_str}"
 
@@ -240,7 +241,7 @@ def display_local_installs(
     if sys.platform != "win32":
         print("[] - This Python install is shadowed by another on Path")
     print("* - This is the active Python executable used to call this module")
-    print("** - This is the parent Python executable of the venv used to call this module")
+    print("** - This is a parent Python executable of the venv used to call this module")
     print()
 
     headings_str = f"| {headings[0]:<{max_version_len}s} | {headings[1]:<{max_executable_len}s} |"
