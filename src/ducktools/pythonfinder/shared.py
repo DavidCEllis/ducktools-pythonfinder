@@ -80,7 +80,7 @@ else:
     CACHE_FOLDER = os.path.join(USER_FOLDER, ".cache", "ducktools", "pythonfinder")
 
 
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 DETAILS_CACHE_PATH = os.path.join(CACHE_FOLDER, f"runtime_cache_v{CACHE_VERSION}.json")
 INSTALLER_CACHE_PATH = os.path.join(CACHE_FOLDER, "installer_details.json")
 
