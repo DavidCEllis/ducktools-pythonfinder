@@ -46,7 +46,7 @@ def version_str_to_tuple(version):
         releaselevel = "alpha"
     elif releaselevel == "b":
         releaselevel = "beta"
-    elif releaselevel == "rc":
+    elif releaselevel in {"c", "rc"}:
         releaselevel = "candidate"
     else:
         releaselevel = "final"
@@ -80,9 +80,14 @@ def get_details():
                     "graalpy_version": version_str_to_tuple(ver)
                 }
             except (NameError, ValueError):
-                metadata = {"{}_version".format(implementation): sys.implementation.version}
+                metadata = {"{}_version".format(implementation): sys.implementation.version}            
         elif implementation != "cpython":  # pragma: no cover
-            metadata = {"{}_version".format(implementation): sys.implementation.version}
+            if implementation == "micropython":
+                imp_ver = sys.implementation.version[:3]
+            else:
+                imp_ver = sys.implementation.version
+
+            metadata = {"{}_version".format(implementation): imp_ver}
         else:
             metadata = {}
             if sys.version_info >= (3, 13):
@@ -90,12 +95,21 @@ def get_details():
                 freethreaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
                 metadata["freethreaded"] = freethreaded
 
+    # Attempt to get the paths to stdlib etc from sysconfig
+    try:
+        import sysconfig  # Exists in 2.7 and 3.2 onwards, missing in earlier and micropython
+    except ImportError:
+        paths = {}
+    else:
+        paths = sysconfig.get_paths()
+
     install = dict(
         version=list(sys.version_info),
         executable=sys.executable,
         architecture="64bit" if (sys.maxsize > 2**32) else "32bit",
         implementation=implementation,
         metadata=metadata,
+        paths=paths,
     )
 
     return install
