@@ -531,7 +531,7 @@ def _implementation_from_uv_dir(
 
     for pth in python_paths:
         if os.path.exists(pth):
-            install = finder.get_install_details(pth, managed_by="Astral UV")
+            install = finder.get_install_details(pth, managed_by="Astral uv")
             break
 
     return install
