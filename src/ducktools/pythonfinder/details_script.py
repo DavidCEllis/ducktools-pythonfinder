@@ -103,10 +103,18 @@ def get_details():
     else:
         paths = sysconfig.get_paths()
 
+    # Use struct to correctly identify GraalPy as 64 bit
+    try:
+        import struct
+    except ImportError:
+        architecture = "64bit" if (sys.maxsize > 2**32) else "32bit"
+    else:
+        architecture = "32bit" if (struct.calcsize("P") == 4) else "64bit"
+    
     install = dict(
         version=list(sys.version_info),
         executable=sys.executable,
-        architecture="64bit" if (sys.maxsize > 2**32) else "32bit",
+        architecture=architecture,
         implementation=implementation,
         metadata=metadata,
         paths=paths,
