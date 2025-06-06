@@ -1,18 +1,18 @@
 # ducktools-pythonfinder
 # MIT License
-# 
+#
 # Copyright (c) 2023-2025 David C Ellis
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -138,7 +138,7 @@ class TestUVReal:
         assert len(pythons) == 1
         assert pythons[0].version_str == "3.12.6"
         assert pythons[0].implementation == "cpython"
-        assert pythons[0].managed_by == "Astral uv"
+        assert pythons[0].managed_by == "Astral"
 
     @pytest.mark.uv_python
     def test_finds_installed_pypy(self, uv_pythondir, temp_finder):
@@ -152,7 +152,7 @@ class TestUVReal:
         assert pythons[0].version >= (3, 10, 14)
         assert pythons[0].implementation == "pypy"
         assert pythons[0].implementation_version >= (7, 3, 17)
-        assert pythons[0].managed_by == "Astral uv"
+        assert pythons[0].managed_by == "Astral"
 
 
 def test_regex_matches():
