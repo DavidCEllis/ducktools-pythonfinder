@@ -39,7 +39,8 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from ducktools.classbuilder.prefab import Prefab, attribute, get_attributes
-from ducktools.pythonfinder.shared import version_str_to_tuple
+
+from .shared import version_str_to_tuple
 
 
 RELEASE_PAGE = "https://www.python.org/api/v2/downloads/release/"
@@ -341,6 +342,7 @@ class PythonOrgSearch(Prefab):
             for download in self.matching_downloads(specifier, prereleases):
                 if download.url.endswith(tag):
                     return download
+        return None
 
     def latest_python_download(self, prereleases=False) -> PythonDownload | None:
         """
@@ -369,3 +371,4 @@ class PythonOrgSearch(Prefab):
                                 md5_sum=release_file.md5_sum,
                             )
                             return download
+        return None

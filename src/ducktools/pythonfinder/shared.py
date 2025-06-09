@@ -190,7 +190,7 @@ class DetailFinder(Prefab):
             self.save()
 
     @property
-    def raw_cache(self):
+    def raw_cache(self) -> dict:
         if self._raw_cache is None:
             try:
                 with open(self.cache_path) as f:
@@ -199,14 +199,14 @@ class DetailFinder(Prefab):
                 self._raw_cache = {}
         return self._raw_cache
 
-    def save(self):
+    def save(self) -> None:
         os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
         with open(self.cache_path, 'w') as f:
             _laz.json.dump(self.raw_cache, f, indent=4)
 
         self._dirty_cache = False
 
-    def clear_invalid_runtimes(self):
+    def clear_invalid_runtimes(self) -> None:
         """
         Remove cache entries where the python.exe no longer exists
         """
@@ -218,7 +218,7 @@ class DetailFinder(Prefab):
         if removed_runtimes:
             self._dirty_cache = True
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """
         Completely empty the cache
         """
@@ -357,6 +357,8 @@ class PythonInstall(Prefab):
     def implementation_version_str(self) -> str:
         return version_tuple_to_str(self.implementation_version)
 
+    # Typing these classmethods would require an import
+    # This is not acceptable for performance reasons
     @classmethod
     def from_str(
         cls,
@@ -387,13 +389,13 @@ class PythonInstall(Prefab):
     @classmethod
     def from_json(
         cls,
-        version,
-        executable,
-        architecture,
-        implementation,
-        metadata,
-        paths=None,
-        managed_by=None,
+        version: str,
+        executable: str,
+        architecture: str,
+        implementation: str,
+        metadata: dict,
+        paths: dict | None = None,
+        managed_by: str | None = None,
     ):
         if arch_ver := metadata.get(f"{implementation}_version"):
             metadata[f"{implementation}_version"] = tuple(arch_ver)
@@ -431,6 +433,7 @@ class PythonInstall(Prefab):
         return pip_call.stdout
 
 
+# Return type missing due to import requirements
 def _python_exe_regex(basename: str = "python"):
     if sys.platform == "win32":
         return _laz.re.compile(rf"{basename}\d?\.?\d*\.exe")
@@ -443,7 +446,7 @@ def get_folder_pythons(
     basenames: tuple[str, ...] = ("python", "pypy", "micropython"),
     finder: DetailFinder | None = None,
     managed_by: str | None = None,
-):
+) -> Iterator[PythonInstall]:
     regexes = [_python_exe_regex(name) for name in basenames]
 
     finder = DetailFinder() if finder is None else finder

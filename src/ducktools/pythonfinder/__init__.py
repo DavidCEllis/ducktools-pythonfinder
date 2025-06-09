@@ -43,7 +43,7 @@ else:
     from .linux import get_python_installs
 
 
-def list_python_installs(*, finder: DetailFinder | None = None):
+def list_python_installs(*, finder: DetailFinder | None = None) -> list[PythonInstall]:
     finder = DetailFinder() if finder is None else finder
     return sorted(
         get_python_installs(finder=finder),

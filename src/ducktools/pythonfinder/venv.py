@@ -84,7 +84,7 @@ class PythonVEnv(Prefab):
         return version_tuple_to_str(self.version)
 
     @property
-    def parent_executable(self) -> str:
+    def parent_executable(self) -> str | None:
         if self._parent_executable is None:
             # Guess the parent executable file
             parent_exe = None
@@ -122,7 +122,9 @@ class PythonVEnv(Prefab):
 
     @property
     def parent_exists(self) -> bool:
-        return os.path.exists(self.parent_executable)
+        if self.parent_executable and os.path.exists(self.parent_executable):
+            return True
+        return False
 
     def get_parent_install(
         self,
@@ -135,6 +137,9 @@ class PythonVEnv(Prefab):
         finder = DetailFinder() if finder is None else finder
 
         if self.parent_exists:
+            # parent_exists forces this check
+            assert self.parent_executable is not None
+
             exe = self.parent_executable
 
             # Python installs may be cached, can skip querying exe.
@@ -253,6 +258,7 @@ def get_python_venvs(
     :param search_parent_folders: Also search parent folders
     :yield: PythonVEnv details.
     """
+    # This converts base_dir to a Path, but mypy doesn't know that
     base_dir = _laz.Path.cwd() if base_dir is None else _laz.Path(base_dir)
 
     cwd_pattern = pattern = f"*/{VENV_CONFIG_NAME}"
@@ -261,7 +267,7 @@ def get_python_venvs(
         # Only search cwd recursively, parents are searched non-recursively
         cwd_pattern = "*" + pattern
 
-    for conf in base_dir.glob(cwd_pattern):
+    for conf in base_dir.glob(cwd_pattern):  # type: ignore
         try:
             env = PythonVEnv.from_cfg(conf)
         except InvalidVEnvError:
@@ -270,7 +276,7 @@ def get_python_venvs(
 
     if search_parent_folders:
         # Search parent folders
-        for fld in base_dir.parents:
+        for fld in base_dir.parents:  # type: ignore
             try:
                 for conf in fld.glob(pattern):
                     try:

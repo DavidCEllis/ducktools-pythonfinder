@@ -28,7 +28,8 @@ import os
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 from ducktools.pythonfinder import list_python_installs, __version__
-from ducktools.pythonfinder.shared import purge_caches
+
+from .shared import purge_caches
 
 _laz = LazyImporter(
     [
