@@ -74,7 +74,7 @@ def get_pyenv_root() -> str | None:
 def get_pyenv_pythons(
     versions_folder: str | os.PathLike | None = None,
     *,
-    finder: DetailFinder = None,
+    finder: DetailFinder | None = None,
 ) -> Iterator[PythonInstall]:
     if versions_folder is None:
         if pyenv_root := get_pyenv_root():
@@ -90,7 +90,7 @@ def get_pyenv_pythons(
     finder = DetailFinder() if finder is None else finder
 
     with finder:
-        for p in sorted(os.scandir(versions_folder), key=lambda x: x.path):
+        for p in sorted(os.scandir(str(versions_folder)), key=lambda x: x.path):
             # Don't include folders that are venvs
             venv_indicator = os.path.join(p.path, "pyvenv.cfg")
             if os.path.exists(venv_indicator):

@@ -27,8 +27,15 @@ import sys
 import os
 
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
-from ducktools.pythonfinder import list_python_installs, __version__
-from ducktools.pythonfinder.shared import purge_caches
+
+from . import list_python_installs, __version__
+from .shared import purge_caches
+
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import argparse
+
 
 _laz = LazyImporter(
     [
@@ -49,7 +56,7 @@ class UnsupportedPythonError(Exception):
     pass
 
 
-def stop_autoclose():
+def stop_autoclose() -> None:
     """
     Checks if it thinks windows will auto close the window after running
 
@@ -76,11 +83,11 @@ def stop_autoclose():
         _laz.subprocess.run("pause", shell=True)
 
 
-def _get_parser_class():
+def _get_parser_class() -> type[argparse.ArgumentParser]:
     # This class is deferred to avoid the argparse import
     # if there are no arguments to parse
 
-    class FixedArgumentParser(_laz.argparse.ArgumentParser):
+    class FixedArgumentParser(_laz.argparse.ArgumentParser):  # type: ignore
         """
         The builtin argument parser uses shutil to figure out the terminal width
         to display help info. This one replaces the function that calls help info
@@ -108,7 +115,7 @@ def _get_parser_class():
     return FixedArgumentParser
 
 
-def get_parser():
+def get_parser() -> argparse.ArgumentParser:
     FixedArgumentParser = _get_parser_class()  # noqa
 
     parser = FixedArgumentParser(
@@ -162,16 +169,16 @@ def get_parser():
 
 
 def display_local_installs(
-    min_ver=None,
-    max_ver=None,
-    compatible=None,
-):
+    min_ver: str | None = None,
+    max_ver: str | None = None,
+    compatible: str | None = None,
+) -> None:
     if min_ver:
-        min_ver = tuple(int(i) for i in min_ver.split("."))
+        min_ver_tuple = tuple(int(i) for i in min_ver.split("."))
     if max_ver:
-        max_ver = tuple(int(i) for i in max_ver.split("."))
+        max_ver_tuple = tuple(int(i) for i in max_ver.split("."))
     if compatible:
-        compatible = tuple(int(i) for i in compatible.split("."))
+        compatible_tuple = tuple(int(i) for i in compatible.split("."))
 
     installs = list_python_installs()
 
@@ -185,15 +192,15 @@ def display_local_installs(
 
     # First collect the strings
     for install in installs:
-        if min_ver and install.version < min_ver:
+        if min_ver and install.version < min_ver_tuple:
             continue
-        elif max_ver and install.version > max_ver:
+        elif max_ver and install.version > max_ver_tuple:
             continue
         elif compatible:
-            if install.version < compatible:
+            if install.version < compatible_tuple:
                 continue
             version_parts = len(compatible) - 1
-            if install.version[:version_parts] > compatible[:-1]:
+            if install.version[:version_parts] > compatible_tuple[:-1]:
                 continue
 
         version_str = install.version_str
@@ -253,14 +260,14 @@ def display_local_installs(
 
 
 def display_remote_binaries(
-    min_ver,
-    max_ver,
-    compatible,
-    all_binaries,
-    system,
-    machine,
-    prerelease
-):
+    min_ver: str,
+    max_ver: str,
+    compatible: str,
+    all_binaries: bool,
+    system: str,
+    machine: str,
+    prerelease: bool,
+) -> None:
     specs = []
     if min_ver:
         specs.append(f">={min_ver}")
@@ -294,7 +301,7 @@ def display_remote_binaries(
         print("No Python releases found matching specification")
 
 
-def main():
+def main() -> int:
     if sys.version_info < (3, 8):
         v = sys.version_info
         raise UnsupportedPythonError(
@@ -334,7 +341,9 @@ def main():
         display_local_installs()
 
     stop_autoclose()
+    
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

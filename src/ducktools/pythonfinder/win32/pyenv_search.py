@@ -52,7 +52,7 @@ def get_pyenv_pythons(
     finder = DetailFinder() if finder is None else finder
 
     with finder:
-        for p in os.scandir(versions_folder):
+        for p in os.scandir(str(versions_folder)):
             # On windows, venv folders usually have the python.exe in \Scripts\
             # while runtimes have it in the base folder so venvs shouldn't be disovered
             # but exclude them early anyway
