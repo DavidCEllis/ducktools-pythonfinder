@@ -35,8 +35,10 @@ from ..shared import get_uv_pythons, DetailFinder,PythonInstall
 # This is the difference from the linux methods
 KNOWN_MANAGED_PATHS = {
     **linux.KNOWN_MANAGED_PATHS,
-    "/opt/homebrew": "Homebrew",
+    "/opt/homebrew": "Homebrew",  # ARM Apple
+    "/usr/local/opt": "Homebrew",  # x86_64 Apple
     "/Applications/Xcode.app": "Xcode",
+    "/Library/Developer/CommandLineTools": "Xcode",  # Xcode commandline tools
     "/Library/Frameworks/Python.framework": "python.org",
 }
 

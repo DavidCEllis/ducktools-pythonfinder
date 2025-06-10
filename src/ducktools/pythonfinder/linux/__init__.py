@@ -81,8 +81,10 @@ def get_path_pythons(
             continue
 
         for install in get_folder_pythons(fld, finder=finder):
-            if manager := known_paths.get(os.path.dirname(install.executable)):
-                install.managed_by = manager
+            for path, manager in known_paths.items():
+                if os.path.commonpath((path, install.executable)) == path:
+                    install.managed_by = manager
+                    break
 
             name = os.path.basename(install.executable)
             if name in exe_names:
