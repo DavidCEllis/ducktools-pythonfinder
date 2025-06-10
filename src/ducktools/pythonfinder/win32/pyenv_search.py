@@ -24,7 +24,11 @@ from __future__ import annotations
 
 import os
 import os.path
-from _collections_abc import Iterator
+
+try:
+    from _collections_abc import Iterator
+except ImportError:
+    from collections.abc import Iterator
 
 from ..shared import PythonInstall, DetailFinder
 

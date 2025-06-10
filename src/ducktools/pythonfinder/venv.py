@@ -30,7 +30,6 @@ except ImportError:
 import os
 import sys
 
-
 from ducktools.classbuilder.prefab import Prefab, attribute
 from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 
