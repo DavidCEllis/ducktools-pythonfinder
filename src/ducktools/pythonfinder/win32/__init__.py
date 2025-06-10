@@ -22,8 +22,12 @@
 # SOFTWARE.
 from __future__ import annotations
 
-from _collections_abc import Iterator
 import itertools
+
+try:
+    from _collections_abc import Iterator
+except ImportError:
+    from collections.abc import Iterator
 
 from ..shared import PythonInstall, get_uv_pythons, DetailFinder
 from .pyenv_search import get_pyenv_pythons

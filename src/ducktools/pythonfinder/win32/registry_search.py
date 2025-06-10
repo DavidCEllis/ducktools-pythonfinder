@@ -20,7 +20,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import annotations
+
+# This is an overly broad ignore as linux mypy errors
+# mypy: disable-error-code="attr-defined"
 
 """
 Search the Windows registry to find python installs
@@ -28,8 +30,10 @@ Search the Windows registry to find python installs
 Based on PEP 514 registry entries.
 """
 
+from __future__ import annotations
+
 import os.path
-import winreg  # noqa  # pycharm seems to think winreg doesn't exist in python3.12
+import winreg
 from _collections_abc import Iterator
 
 from ..shared import DetailFinder, PythonInstall, version_str_to_tuple

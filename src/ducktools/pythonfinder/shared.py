@@ -26,7 +26,10 @@ import sys
 import os
 import os.path
 
-from _collections_abc import Iterator
+try:
+    from _collections_abc import Iterator
+except ImportError:
+    from collections.abc import Iterator
 
 from ducktools.classbuilder.prefab import Prefab, attribute, as_dict
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport

@@ -25,7 +25,11 @@ from __future__ import annotations
 import os
 import os.path
 import itertools
-from _collections_abc import Iterator
+
+try:
+    from _collections_abc import Iterator
+except ImportError:
+    from collections.abc import Iterator
 
 from ..shared import (
     DetailFinder,
@@ -45,7 +49,12 @@ KNOWN_MANAGED_PATHS = {
 }
 
 
-def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonInstall]:
+def get_path_pythons(
+    *,
+    finder: DetailFinder | None = None,
+    known_paths: dict[str, str] | None = None,
+) -> Iterator[PythonInstall]:
+
     exe_names = set()
 
     path_folders = os.environ.get("PATH", "").split(":")
@@ -55,6 +64,7 @@ def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonIn
     excluded_folders = [pyenv_root, uv_root]
 
     finder = DetailFinder() if finder is None else finder
+    known_paths = KNOWN_MANAGED_PATHS if known_paths is None else known_paths
 
     for fld in path_folders:
         # Don't retrieve pyenv installs
@@ -71,8 +81,10 @@ def get_path_pythons(*, finder: DetailFinder | None = None) -> Iterator[PythonIn
             continue
 
         for install in get_folder_pythons(fld, finder=finder):
-            if manager := KNOWN_MANAGED_PATHS.get(os.path.dirname(install.executable)):
-                install.managed_by = manager
+            for path, manager in known_paths.items():
+                if os.path.commonpath((path, install.executable)) == path:
+                    install.managed_by = manager
+                    break
 
             name = os.path.basename(install.executable)
             if name in exe_names:

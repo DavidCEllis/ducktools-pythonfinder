@@ -20,15 +20,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import annotations
-
 """
 Discover python installs that have been created with pyenv
 """
 
+from __future__ import annotations
+
 import os
 import os.path
-from _collections_abc import Iterator
+
+try:
+    from _collections_abc import Iterator
+except ImportError:
+    from collections.abc import Iterator
 
 from ducktools.lazyimporter import LazyImporter, FromImport, ModuleImport
 

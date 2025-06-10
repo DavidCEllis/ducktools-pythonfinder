@@ -20,7 +20,55 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
-"""Currently just copied from linux"""
+import itertools
+try:
+    from _collections_abc import Iterator
+except ImportError:
+    from collections.abc import Iterator
 
-from ..linux import get_python_installs, get_path_pythons, get_pyenv_pythons
+from .. import linux
+from ..shared import get_uv_pythons, DetailFinder,PythonInstall
+
+
+# This is the difference from the linux methods
+KNOWN_MANAGED_PATHS = {
+    **linux.KNOWN_MANAGED_PATHS,
+    "/opt/homebrew": "Homebrew",  # ARM Apple
+    "/usr/local/opt": "Homebrew",  # x86_64 Apple
+    "/Applications/Xcode.app": "Xcode",
+    "/Library/Developer/CommandLineTools": "Xcode",  # Xcode commandline tools
+    "/Library/Frameworks/Python.framework": "python.org",
+}
+
+
+def get_path_pythons(
+    *,
+    finder: DetailFinder | None = None,
+    known_paths: dict[str, str] | None = None,
+) -> Iterator[PythonInstall]:
+    
+    known_paths = KNOWN_MANAGED_PATHS if known_paths is None else known_paths
+
+    return linux.get_path_pythons(finder=finder, known_paths=known_paths)
+
+
+def get_python_installs(
+    *,
+    finder: DetailFinder | None = None,
+) -> Iterator[PythonInstall]:
+    listed_pythons = set()
+
+    finder = DetailFinder() if finder is None else finder
+
+    chain_commands = [
+        linux.get_pyenv_pythons(finder=finder),
+        get_uv_pythons(finder=finder),
+        get_path_pythons(finder=finder),
+    ]
+    with finder:
+        for py in itertools.chain.from_iterable(chain_commands):
+            if py.executable not in listed_pythons:
+                yield py
+                listed_pythons.add(py.executable)
