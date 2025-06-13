@@ -378,7 +378,6 @@ class PythonInstall(Prefab):
         metadata = {} if metadata is None else metadata
         paths = {} if paths is None else paths
 
-        # noinspection PyArgumentList
         return cls(
             version=version_tuple,
             executable=executable,
@@ -392,7 +391,7 @@ class PythonInstall(Prefab):
     @classmethod
     def from_json(
         cls,
-        version: str,
+        version: list[int | str],  # This is actually the list version of [int, int, int, str, int]
         executable: str,
         architecture: str,
         implementation: str,
@@ -405,7 +404,6 @@ class PythonInstall(Prefab):
 
         paths = {} if paths is None else paths
 
-        # noinspection PyArgumentList
         return cls(
             version=tuple(version),  # type: ignore
             executable=executable,
