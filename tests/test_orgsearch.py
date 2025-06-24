@@ -21,6 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from functools import lru_cache
+
 from packaging.specifiers import SpecifierSet
 import pytest
 
@@ -35,8 +37,9 @@ def website_caches(sources_folder):
     return release_cache, release_file_cache
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def searcher(website_caches):
+    @lru_cache
     def make_org_search(system, machine):
         release_cache, release_file_cache = website_caches
         return PythonOrgSearch(

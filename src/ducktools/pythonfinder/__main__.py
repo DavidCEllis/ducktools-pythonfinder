@@ -301,11 +301,11 @@ def display_remote_binaries(
 
 
 def main() -> int:
-    if sys.version_info < (3, 8):
+    if sys.version_info < (3, 10):
         v = sys.version_info
         raise UnsupportedPythonError(
             f"Python {v.major}.{v.minor}.{v.micro} is not supported. "
-            f"ducktools.pythonfinder requires Python 3.8 or later."
+            f"ducktools.pythonfinder requires Python 3.10 or later."
         )
 
     if sys.argv[1:]:

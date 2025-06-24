@@ -12,16 +12,14 @@ authors = [
     { name = "David C Ellis" },
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
-    "ducktools-lazyimporter",
-    "ducktools-classbuilder>=0.7.1",
-    "packaging>=23.2",
+    "ducktools-lazyimporter>=0.7.3",
+    "ducktools-classbuilder>=0.9.1",
+    "packaging>=24.2",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -36,11 +34,16 @@ dynamic = ['version']
 [project.urls]
 "Homepage" = "https://github.com/davidcellis/ducktools-pythonfinder"
 
-[project.optional-dependencies]
-testing = ["pytest", "pytest-cov", "pyfakefs"]
-
 [project.scripts]
 "ducktools-pythonfinder" = "ducktools.pythonfinder.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4",
+    "pytest-cov>=6.1",
+    "pyfakefs>=5.8",
+    "mypy>=1.16",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
