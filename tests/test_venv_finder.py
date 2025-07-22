@@ -1,18 +1,18 @@
 # ducktools-pythonfinder
 # MIT License
-# 
+#
 # Copyright (c) 2023-2025 David C Ellis
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,7 +23,9 @@
 import os
 import subprocess
 import sys
+import sysconfig
 import tempfile
+from pathlib import Path
 
 from ducktools.pythonfinder.venv import list_python_venvs
 
@@ -35,15 +37,26 @@ def with_venvs():
     with tempfile.TemporaryDirectory() as tmpdir:
         # We can't actually use venv directly here as
         # Older python on linux makes invalid venvs
-        if sys.platform == "win32":
-            python_exe = os.path.join(sys.base_prefix, "python.exe")
+
+        config_exe = sysconfig.get_config_var("EXENAME")
+
+        if config_exe:
+            exename = os.path.basename(config_exe)
+        elif sys.platform == "win32":
+            exename = "python.exe"
         else:
-            python_exe = os.path.join(sys.base_prefix, "bin", "python")
+            ver = ".".join(str(v) for v in sys.version_info[:2])
+            exename = f"python{ver}"
+
+        if sys.platform == "win32":
+            py_exe = Path(sys.base_prefix) / exename
+        else:
+            py_exe = Path(sys.base_prefix) / "bin" / exename
 
         def make_venv(pth):
             subprocess.run(
                 [
-                    python_exe,
+                    py_exe,
                     "-m", "venv",
                     "--without-pip",
                     os.path.join(tmpdir, pth),

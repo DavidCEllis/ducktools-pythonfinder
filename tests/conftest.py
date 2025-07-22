@@ -1,18 +1,18 @@
 # ducktools-pythonfinder
 # MIT License
-# 
+#
 # Copyright (c) 2023-2025 David C Ellis
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -60,7 +60,8 @@ def this_python(temp_finder):
     elif sys.platform == "win32":
         exename = "python.exe"
     else:
-        exename = "python"
+        ver = ".".join(str(v) for v in sys.version_info[:2])
+        exename = f"python{ver}"
 
     if sys.platform == "win32":
         py_exe = Path(sys.base_prefix) / exename
@@ -72,10 +73,7 @@ def this_python(temp_finder):
 
 @pytest.fixture(scope="function")
 def this_venv(temp_finder):
-    if sys.platform == "win32":
-        exe = sys.executable
-    else:
-        exe = str(Path(sys.executable).with_name("python"))
+    exe = sys.executable
     venv = temp_finder.query_install(exe)
     return venv
 

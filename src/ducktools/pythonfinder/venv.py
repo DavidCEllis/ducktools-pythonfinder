@@ -1,18 +1,18 @@
 # ducktools-pythonfinder
 # MIT License
-# 
+#
 # Copyright (c) 2023-2025 David C Ellis
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -90,10 +90,16 @@ class PythonVEnv(Prefab):
             if sys.platform == "win32":
                 parent_exe = os.path.join(self.parent_path, "python.exe")
             else:
-                # try with additional numbers in order eg: python313, python3, python
-                for i in reversed(range(2)):
-                    version_part = "".join(str(v) for v in self.version[:i])
-                    parent_exe = os.path.join(self.parent_path, f"python{version_part}")
+                # try with additional numbers in order eg: python3.13, python313, python3, python
+                suffixes = [
+                    f"{self.version[0]}.{self.version[1]}",
+                    f"{self.version[0]}{self.version[1]}",
+                    f"{self.version[0]}",
+                    ""
+                ]
+
+                for suffix in suffixes:
+                    parent_exe = os.path.join(self.parent_path, f"python{suffix}")
                     if os.path.exists(parent_exe):
                         break
 
