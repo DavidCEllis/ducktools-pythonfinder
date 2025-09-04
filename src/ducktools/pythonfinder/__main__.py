@@ -28,7 +28,7 @@ import os
 from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
 from . import list_python_installs, __version__
-from .shared import purge_caches
+from .shared import purge_caches, version_str_to_tuple
 
 
 TYPE_CHECKING = False
@@ -40,6 +40,7 @@ _laz = LazyImporter(
     [
         ModuleImport("argparse"),
         ModuleImport("csv"),
+        ModuleImport("re"),
         ModuleImport("subprocess"),
         ModuleImport("sysconfig"),
         ModuleImport("platform"),
@@ -173,11 +174,11 @@ def display_local_installs(
     compatible: str | None = None,
 ) -> None:
     if min_ver:
-        min_ver_tuple = tuple(int(i) for i in min_ver.split("."))
+        min_ver_tuple = version_str_to_tuple(min_ver)
     if max_ver:
-        max_ver_tuple = tuple(int(i) for i in max_ver.split("."))
+        max_ver_tuple = version_str_to_tuple(max_ver)
     if compatible:
-        compatible_tuple = tuple(int(i) for i in compatible.split("."))
+        compatible_spec = _laz.SpecifierSet(f"~={compatible}")
 
     installs = list_python_installs()
 
@@ -195,12 +196,8 @@ def display_local_installs(
             continue
         elif max_ver and install.version > max_ver_tuple:
             continue
-        elif compatible:
-            if install.version < compatible_tuple:
-                continue
-            version_parts = len(compatible) - 1
-            if install.version[:version_parts] > compatible_tuple[:-1]:
-                continue
+        elif compatible and not compatible_spec.contains(install.version_str):
+            continue
 
         version_str = install.version_str
 
@@ -340,7 +337,7 @@ def main() -> int:
         display_local_installs()
 
     stop_autoclose()
-    
+
     return 0
 
 
