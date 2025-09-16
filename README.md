@@ -3,18 +3,30 @@
 Find local python installs on Windows/Linux/MacOS and find the latest installers from python.org
 for Windows and MacOS or sources for Linux (as python.org does not provide linux installers).
 
-Requires Python >= 3.8 (but will discover older Python installs)
+Requires Python >= 3.10 (but will discover older Python installs)
 
 [Download the zipapp here](https://github.com/DavidCEllis/ducktools-pythonfinder/releases/latest/download/pythonfinder.pyz)
 
-It is also available as a library on PyPI that can be installed with pip:
-`python -m pip install ducktools-pythonfinder`
+It is also available as an application and library on PyPI. The simplest way to install this
+is with [uv](https://docs.astral.sh/uv/).
+
+With uv:
+* Install it as an application with `uv tool install ducktools-pythonfinder`
+* Run once with `uvx ducktools-pythonfinder`
+* Add it as a library to a project with `uv add ducktools-pythonfinder`
+* Add it as a library for a script with `uv add --script scriptname.py ducktools-pythonfinder`
+* test it in a repl with `uv run --isolated --with ducktools-pythonfinder python`
+
+If you do not wish to use `uv`, you can also install as an application with
+[pipx](https://pipx.pypa.io/latest/), or manually manage dependencies in `pyproject.toml`,
+[inline script metadata](https://packaging.python.org/en/latest/specifications/inline-script-metadata/#inline-script-metadata)
+or in virtual environments using `pip`.
 
 ## Command Line Usage ##
 
 `ducktools-pythonfinder` can be used as a module or as a bundled zipapp (as `pythonfinder.pyz`).
 
-`python pythonfinder.pyz` or `python -m ducktools.pythonfinder` 
+`python pythonfinder.pyz` or `python -m ducktools.pythonfinder`
 will provide a table of installed python versions
 and their respective folders. It will also indicate the python running the
 command if it is found, or the python that is the base for the venv running the command.
@@ -23,10 +35,10 @@ Python versions listed can be restricted by using the `--max`, `--min` and
 `--compatible` options to the command. These roughly translate to `>=` for min, `<` for max
 and `~=` for compatible in python version specifiers.
 
-If you wish to find the latest binaries available from python.org for your platform 
+If you wish to find the latest binaries available from python.org for your platform
 (or sources on Linux) there is the additional `online` command with some extra flags.
 
-By default it will fetch the latest patches for each Python release (eg: 2.7.18 for 2.7) for 
+By default it will fetch the latest patches for each Python release (eg: 2.7.18 for 2.7) for
 the hardware you're on. The filters for local versions also work.
 
 * `--all-binaries` will get you all binary releases that match the restrictions.
@@ -34,7 +46,7 @@ the hardware you're on. The filters for local versions also work.
   (the values you give should match platform.system() and platform.machine() return values).
 * `--prerelease` includes prerelease versions in the search.
 
-Example: 
+Example:
 `python pythonfinder.pyz online --min 3.10 --system Windows --machine AMD64`
 
 ```
@@ -61,8 +73,8 @@ On Windows these methods will search the registry for PEP514 recorded python ins
 before checking for any `pyenv-win` installs that have not been registered. Finally, if
 `uv` is available it will try to find Python installs managed by `uv`.
 
-On Linux and MacOS this will search for `pyenv` installs first, 
-if `uv` is available it will then try to find `uv` managed python installs. 
+On Linux and MacOS this will search for `pyenv` installs first,
+if `uv` is available it will then try to find `uv` managed python installs.
 Finally it will search `PATH` for any other `python*` binaries that might be available.
 
 If a python install is found twice (for instance a pyenv install in the windows registry)
@@ -131,8 +143,8 @@ latest_prerelease_binary = searcher.latest_binary_match(SpecifierSet(">=3.10"), 
 ## Why? ##
 
 For the purposes of PEP723 script dependencies and other releated tools
-it may be useful to find another version of python other than the one currently running 
-in order to satisfy the `requires-python` field. 
+it may be useful to find another version of python other than the one currently running
+in order to satisfy the `requires-python` field.
 This tool is intended to search for potential python installs to attempt to
 satisfy such a requirement.
 
