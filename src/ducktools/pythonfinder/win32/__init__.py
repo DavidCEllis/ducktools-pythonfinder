@@ -38,7 +38,8 @@ def get_python_installs(
     *,
     finder: DetailFinder | None = None
 ) -> Iterator[PythonInstall]:
-    listed_installs = set()
+    listed_stdlibs = set()
+    listed_bins = set()
 
     finder = DetailFinder() if finder is None else finder
 
@@ -48,6 +49,12 @@ def get_python_installs(
             get_pyenv_pythons(finder=finder),
             get_uv_pythons(finder=finder),
         ):
-            if py.executable not in listed_installs:
+            # Compare by stdlib paths for uniqueness
+            stdlib_path = py.paths.get("stdlib")
+            if stdlib_path:
+                if stdlib_path not in listed_stdlibs:
+                    yield py
+                    listed_stdlibs.add(stdlib_path)
+            elif py.executable not in listed_bins:
                 yield py
-                listed_installs.add(py.executable)
+                listed_bins.add(py.executable)
