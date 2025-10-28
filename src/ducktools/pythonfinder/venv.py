@@ -95,6 +95,7 @@ class PythonVEnv(Prefab):
                     ],
                     capture_output=True,
                     text=True,
+                    check=True,
                 )
             except (_laz.subprocess.CallProcessError, FileNotFoundError):
                 pass
