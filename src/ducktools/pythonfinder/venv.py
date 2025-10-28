@@ -97,7 +97,7 @@ class PythonVEnv(Prefab):
                     text=True,
                     check=True,
                 )
-            except (_laz.subprocess.CallProcessError, FileNotFoundError):
+            except (_laz.subprocess.CalledProcessError, FileNotFoundError):
                 pass
             else:
                 if out_implementation := pyout.stdout:
