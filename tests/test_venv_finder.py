@@ -57,12 +57,13 @@ def with_venvs():
             subprocess.run(
                 [
                     py_exe,
-                    "-m", "venv",
+                    "-m",
+                    "venv",
                     "--without-pip",
                     os.path.join(tmpdir, pth),
                 ],
                 check=True,
-                capture_output=True
+                capture_output=True,
             )
 
         make_venv(".venv")
@@ -90,29 +91,40 @@ def test_local_found(with_venvs):
 
 
 def test_parent_not_always_searched(with_venvs):
-    venvs = list_python_venvs(base_dir=os.path.join(with_venvs, "subfolder"), search_parent_folders=False)
+    venvs = list_python_venvs(
+        base_dir=os.path.join(with_venvs, "subfolder"), search_parent_folders=False
+    )
 
     assert len(venvs) == 1
-    assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, "subfolder/.venv"))
+    assert os.path.samefile(
+        venvs[0].folder, os.path.join(with_venvs, "subfolder/.venv")
+    )
 
 
 def test_found_in_parent(with_venvs):
-    venvs = list_python_venvs(base_dir=os.path.join(with_venvs, "subfolder"), search_parent_folders=True)
+    venvs = list_python_venvs(
+        base_dir=os.path.join(with_venvs, "subfolder"), search_parent_folders=True
+    )
 
-    assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, "subfolder/.venv"))
+    assert os.path.samefile(
+        venvs[0].folder, os.path.join(with_venvs, "subfolder/.venv")
+    )
     assert os.path.samefile(venvs[1].folder, os.path.join(with_venvs, ".venv"))
 
 
 def test_all_found(with_venvs):
     venvs = sorted(
-        list_python_venvs(base_dir=with_venvs, recursive=True),
-        key=lambda x: x.folder
+        list_python_venvs(base_dir=with_venvs, recursive=True), key=lambda x: x.folder
     )
 
     assert len(venvs) == 3
     assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, ".venv"))
-    assert os.path.samefile(venvs[1].folder, os.path.join(with_venvs, "subfolder/.venv"))
-    assert os.path.samefile(venvs[2].folder, os.path.join(with_venvs, "subfolder/subsubfolder/env"))
+    assert os.path.samefile(
+        venvs[1].folder, os.path.join(with_venvs, "subfolder/.venv")
+    )
+    assert os.path.samefile(
+        venvs[2].folder, os.path.join(with_venvs, "subfolder/subsubfolder/env")
+    )
 
 
 def test_recursive_parents(with_venvs):
@@ -122,13 +134,19 @@ def test_recursive_parents(with_venvs):
             recursive=True,
             search_parent_folders=True,
         ),
-        key=lambda x: x.folder
+        key=lambda x: x.folder,
     )
 
     assert len(venvs) == 3
     assert os.path.samefile(venvs[0].folder, os.path.join(with_venvs, ".venv"))
-    assert os.path.samefile(venvs[1].folder, os.path.join(with_venvs, "subfolder/.venv"))
-    assert os.path.samefile(venvs[2].folder, os.path.join(with_venvs, "subfolder/subsubfolder/env"))
+    assert os.path.samefile(
+        venvs[1].folder,
+        os.path.join(with_venvs, "subfolder/.venv"),
+    )
+    assert os.path.samefile(
+        venvs[2].folder,
+        os.path.join(with_venvs, "subfolder/subsubfolder/env"),
+    )
 
 
 def test_found_parent(with_venvs, this_python, this_venv):
@@ -138,11 +156,16 @@ def test_found_parent(with_venvs, this_python, this_venv):
 
     # We found the base env that created this python, all details match
     parent = venv_ex.get_parent_install()
-    assert os.path.dirname(parent.executable) == os.path.dirname(this_python.executable)
+    assert os.path.samefile(parent.executable, this_python.executable)
 
     # venvs created by the venv module don't record prerelease details in the version
     # That's not my fault that's venv!
     assert venv_ex.version[:3] == parent.version[:3]
+
+
+def test_found_implementation(with_venvs, this_python):
+    venv_ex = list_python_venvs(base_dir=with_venvs, recursive=False)[0]
+    assert venv_ex.implementation == this_python.implementation
 
 
 def test_found_parent_cache(with_venvs, this_python, temp_finder):
