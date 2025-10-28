@@ -23,7 +23,7 @@ jobs:
     - name: Store the built zipapp
       uses: actions/upload-artifact@v5
       with:
-        name: pytui-zipapp
+        name: pythonfinder-zipapp
         path: dist/
         retention-days: 1
 
