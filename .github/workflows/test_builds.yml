@@ -1,0 +1,57 @@
+name: Test Builds
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  zipapp-build:
+    name: Test Zipapp Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.10"  # build with oldest supported python
+    - name: Build the Zipapp
+      run: >-
+        python3 scripts/build_zipapp.py
+    - name: Store the built zipapp
+      uses: actions/upload-artifact@v5
+      with:
+        name: pythonfinder-zipapp
+        path: dist/
+        retention-days: 1
+
+  wheel-build:
+    name: Test Wheel Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - name: Install pypa/build
+        run: >-
+          python3 -m
+          pip install
+          build
+          --user
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 1
