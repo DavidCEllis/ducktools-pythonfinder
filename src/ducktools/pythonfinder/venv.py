@@ -24,7 +24,7 @@ from __future__ import annotations
 
 try:
     from _collections_abc import Iterable
-except ImportError:
+except ImportError:  # pragma: nocover
     from collections.abc import Iterable
 
 import os
@@ -76,6 +76,7 @@ class PythonVEnv(Prefab):
     executable: str
     version: tuple[int, int, int, str, int]
     parent_path: str
+    _implementation: str | None = attribute(default=None, repr=False)
     _parent_executable: str | None = attribute(default=None, repr=False)
 
     @property
@@ -83,13 +84,49 @@ class PythonVEnv(Prefab):
         return version_tuple_to_str(self.version)
 
     @property
+    def implementation(self) -> str | None:
+        if not self._implementation:
+            try:
+                pyout = _laz.run(
+                    [
+                        self.executable,
+                        "-c",
+                        "import sys; sys.stdout.write(sys.implementation.name)"
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+            except (_laz.subprocess.CallProcessError, FileNotFoundError):
+                pass
+            else:
+                if out_implementation := pyout.stdout:
+                    self._implementation = out_implementation.lower().strip()
+
+        return self._implementation
+
+    @property
     def parent_executable(self) -> str | None:
         if self._parent_executable is None:
-            # Guess the parent executable file
-            parent_exe = None
-            if sys.platform == "win32":
-                parent_exe = os.path.join(self.parent_path, "python.exe")
-            else:
+
+            parent_exe: None | str = None
+
+            implementation_bins = {
+                "cpython": "python",
+                "pypy": "pypy",
+                "graalpy": "graalpy",
+            }
+
+            venv_exe_path = _laz.Path(self.executable)
+
+            if venv_exe_path.is_symlink():
+                parent_path = venv_exe_path.resolve()
+                if parent_path.exists():
+                    parent_exe = str(venv_exe_path.resolve())
+
+            elif self.implementation and self.implementation in implementation_bins:
+
+                bin_name = implementation_bins[self.implementation]
+
                 # try with additional numbers in order eg: python3.13, python313, python3, python
                 suffixes = [
                     f"{self.version[0]}.{self.version[1]}",
@@ -98,28 +135,42 @@ class PythonVEnv(Prefab):
                     ""
                 ]
 
-                for suffix in suffixes:
-                    parent_exe = os.path.join(self.parent_path, f"python{suffix}")
+                # Guess the parent executable file
+                if sys.platform == "win32":
+                    names = [
+                        f"{bin_name}{suffix}.exe" for suffix in suffixes
+                    ]
+                else:
+                    names = [
+                        f"{bin_name}{suffix}" for suffix in suffixes
+                    ]
+
+                for candidate in names:
+                    parent_exe = os.path.join(self.parent_path, candidate)
                     if os.path.exists(parent_exe):
                         break
-
-            if not (parent_exe and os.path.exists(parent_exe)):
-                try:
-                    pyout = _laz.run(
-                        [
-                            self.executable,
-                            "-c",
-                            "import sys; sys.stdout.write(getattr(sys, '_base_executable', ''))",
-                        ],
-                        capture_output=True,
-                        text=True,
-                        check=True,
-                    )
-                except (_laz.subprocess.CalledProcessError, FileNotFoundError):
-                    pass
                 else:
-                    if out_exe := pyout.stdout:
-                        parent_exe = os.path.join(self.parent_path, os.path.basename(out_exe))
+                    # Exhausted options and none exist
+                    parent_exe = None
+
+                # base_executable should point to the correct path from 3.11+, except on PyPy
+                if not parent_exe and self.version >= (3, 11) and self.implementation != "pypy":
+                    try:
+                        pyout = _laz.run(
+                            [
+                                self.executable,
+                                "-c",
+                                "import sys; sys.stdout.write(getattr(sys, '_base_executable', ''))",
+                            ],
+                            capture_output=True,
+                            text=True,
+                            check=True,
+                        )
+                    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
+                        pass
+                    else:
+                        if out_exe := pyout.stdout:
+                            parent_exe = out_exe
 
             self._parent_executable = parent_exe
 
@@ -202,7 +253,19 @@ class PythonVEnv(Prefab):
 
         parent_path = conf.get("home")
         version_str = conf.get("version", conf.get("version_info"))
+
+        # Included in venv and virtualenv generated venvs
         parent_exe = conf.get("executable", conf.get("base-executable"))
+
+        # Included in virtualenv and uv generated venvs
+        implementation = conf.get("implementation")
+
+        if implementation:
+            implementation = implementation.lower()
+            # More graalpy special casing
+            # For whatever reason in pyvenv the listing is graalvm not graalpy
+            if implementation == "graalvm":
+                implementation = "graalpy"
 
         if parent_path is None or version_str is None:
             # Not a valid venv
@@ -238,6 +301,7 @@ class PythonVEnv(Prefab):
             version=version_tuple,
             parent_path=parent_path,
             _parent_executable=parent_exe,
+            _implementation=implementation,
         )
 
 
