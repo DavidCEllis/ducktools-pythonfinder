@@ -156,7 +156,7 @@ def test_found_parent(with_venvs, this_python, this_venv):
 
     # We found the base env that created this python, all details match
     parent = venv_ex.get_parent_install()
-    assert os.path.dirname(parent.executable) == os.path.dirname(this_python.executable)
+    assert os.path.samefile(parent.executable, this_python.executable)
 
     # venvs created by the venv module don't record prerelease details in the version
     # That's not my fault that's venv!
