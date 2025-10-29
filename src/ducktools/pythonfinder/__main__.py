@@ -199,6 +199,7 @@ def display_local_installs(
         elif compatible and not compatible_spec.contains(install.version_str):
             continue
 
+        real_executable = install.real_executable
         version_str = install.version_str
 
         if sys.platform == "win32":
@@ -207,7 +208,7 @@ def display_local_installs(
             if install.architecture == "32bit":
                 version_str = f"^{version_str}"
 
-        if install.executable == sys.executable:
+        if install.executable == sys.executable or real_executable == sys.executable:
             version_str = f"*{version_str}"
         elif (
             sys.prefix != sys.base_prefix
@@ -229,9 +230,9 @@ def display_local_installs(
             version_str = f"({install.implementation_version_str}) {version_str}"
 
         max_version_len = max(max_version_len, len(version_str))
-        max_executable_len = max(max_executable_len, len(install.executable))
+        max_executable_len = max(max_executable_len, len(real_executable))
 
-        install_collection.append((version_str, install.executable))
+        install_collection.append((version_str, real_executable))
 
     print("Discoverable Python Installs")
     print()

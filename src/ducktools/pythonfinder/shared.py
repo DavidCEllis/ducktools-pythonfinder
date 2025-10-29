@@ -337,14 +337,32 @@ class PythonInstall(Prefab):
             # Add the extras to avoid breaking
             self.version = tuple([*version, "final", 0])  # type: ignore
         else:
-            self.version = version
+            self.version = version  # type: ignore
+
+    @property
+    def real_executable(self) -> str:
+        """
+        :return: Path to the executable with any symlinks resolved
+        """
+        return os.path.realpath(self.executable)
 
     @property
     def version_str(self) -> str:
+        """
+        :return: Python version as a string
+        """
         return version_tuple_to_str(self.version)
 
     @property
     def implementation_version(self) -> tuple[int, int, int, str, int] | None:
+        """
+        The implementation version may differ from the 'Version' for implementations
+        other than CPython.
+
+        This specifically returns the version of the implementation
+
+        :return: Implementation version as tuple (major, minor, micro, releaselevel, serial)
+        """
         if self._implementation_version is None:
             if implementation_ver := self.metadata.get(f"{self.implementation}_version"):
                 if len(implementation_ver) == 3:
@@ -358,10 +376,11 @@ class PythonInstall(Prefab):
 
     @property
     def implementation_version_str(self) -> str:
+        """
+        :return: Version of the implementation as a string
+        """
         return version_tuple_to_str(self.implementation_version)
 
-    # Typing these classmethods would require an import
-    # This is not acceptable for performance reasons
     @classmethod
     def from_str(
         cls,

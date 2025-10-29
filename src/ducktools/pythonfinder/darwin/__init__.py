@@ -48,7 +48,7 @@ def get_path_pythons(
     finder: DetailFinder | None = None,
     known_paths: dict[str, str] | None = None,
 ) -> Iterator[PythonInstall]:
-    
+
     known_paths = KNOWN_MANAGED_PATHS if known_paths is None else known_paths
 
     return linux.get_path_pythons(finder=finder, known_paths=known_paths)
@@ -69,6 +69,6 @@ def get_python_installs(
     ]
     with finder:
         for py in itertools.chain.from_iterable(chain_commands):
-            if py.executable not in listed_pythons:
+            if py.real_executable not in listed_pythons:
                 yield py
-                listed_pythons.add(py.executable)
+                listed_pythons.add(py.real_executable)
