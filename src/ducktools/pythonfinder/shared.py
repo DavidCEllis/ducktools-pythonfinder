@@ -327,6 +327,7 @@ class PythonInstall(Prefab):
     paths: dict[str, str] = attribute(default_factory=dict)
     shadowed: bool = attribute(default=False, serialize=False)
     _implementation_version: tuple[int, int, int, str, int] | None = attribute(default=None, private=True)
+    _real_executable: str | None = attribute(default=None, private=True)
 
     def __prefab_post_init__(
         self,
@@ -344,7 +345,9 @@ class PythonInstall(Prefab):
         """
         :return: Path to the executable with any symlinks resolved
         """
-        return os.path.realpath(self.executable)
+        if self._real_executable is None:
+            self._real_executable = os.path.realpath(self.executable)
+        return self._real_executable
 
     @property
     def version_str(self) -> str:

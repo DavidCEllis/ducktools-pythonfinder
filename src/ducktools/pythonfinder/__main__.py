@@ -201,7 +201,6 @@ def display_local_installs(
         elif compatible and not compatible_spec.contains(install.version_str):
             continue
 
-        real_executable = install.real_executable
         version_str = install.version_str
 
         if sys.platform == "win32":
@@ -210,7 +209,7 @@ def display_local_installs(
             if install.architecture == "32bit":
                 version_str = f"^{version_str}"
 
-        if real_executable == real_sys_executable:
+        if install.real_executable == real_sys_executable:
             version_str = f"*{version_str}"
         elif (
             sys.prefix != sys.base_prefix
