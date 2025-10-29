@@ -190,6 +190,8 @@ def display_local_installs(
 
     alternate_implementations = False
 
+    real_sys_executable = os.path.realpath(sys.executable)
+
     # First collect the strings
     for install in installs:
         if min_ver and install.version < min_ver_tuple:
@@ -208,7 +210,7 @@ def display_local_installs(
             if install.architecture == "32bit":
                 version_str = f"^{version_str}"
 
-        if install.executable == sys.executable or real_executable == sys.executable:
+        if real_executable == real_sys_executable:
             version_str = f"*{version_str}"
         elif (
             sys.prefix != sys.base_prefix
