@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Set up Python
@@ -22,7 +22,7 @@ jobs:
       run: >-
         python3 scripts/build_zipapp.py
     - name: Store the built zipapp
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: pythonfinder-zipapp
         path: dist/
@@ -41,12 +41,12 @@ jobs:
 
     steps:
     - name: Download the zipapp
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: pythonfinder-zipapp
         path: dist/
     - name: Sign the zipapp with Sigstore
-      uses: sigstore/gh-action-sigstore-python@v3.1.0
+      uses: sigstore/gh-action-sigstore-python@v3.2.0
       with:
         release-signing-artifacts: false
         inputs: >-
