@@ -51,13 +51,6 @@ _laz = LazyImporter(
 
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
-UV_PYTHON_RE = (
-    r"(?P<implementation>[a-zA-Z]+)"
-    r"-(?P<version>\d+\.\d+\.\d*[a-zA-Z]*\d*)\+?(?P<extra>.*?)?"
-    r"-(?P<platform>\w*)"
-    r"-(?P<arch>\w*)"
-    r"-.*"
-)
 
 # Cache for runtime details
 # Code to work out where to store data
@@ -574,6 +567,7 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
                 for f in fld:
                     if (
                         f.is_dir()
+                        and not f.is_symlink()
                         and (install := _implementation_from_uv_dir(f, finder=finder))
                     ):
                         yield install
