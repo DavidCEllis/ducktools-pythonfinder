@@ -567,6 +567,7 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
                 for f in fld:
                     if (
                         f.is_dir()
+                        and not f.is_symlink()
                         and (install := _implementation_from_uv_dir(f, finder=finder))
                     ):
                         yield install
