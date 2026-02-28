@@ -51,13 +51,6 @@ _laz = LazyImporter(
 
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
-UV_PYTHON_RE = (
-    r"(?P<implementation>[a-zA-Z]+)"
-    r"-(?P<version>\d+\.\d+\.\d*[a-zA-Z]*\d*)\+?(?P<extra>.*?)?"
-    r"-(?P<platform>\w*)"
-    r"-(?P<arch>\w*)"
-    r"-.*"
-)
 
 # Cache for runtime details
 # Code to work out where to store data
