@@ -291,16 +291,21 @@ class DetailFinder(Prefab):
         exe_path = os.path.abspath(exe_path)
         mtime = os.stat(exe_path).st_mtime
 
+        # If the mtime of the file has been set to 0
+        # it is not possible to reliably cache install details
+        cacheable_install = (mtime != 0)
+
         install = None
         if cached_details := self.raw_cache.get(exe_path):
-            if cached_details["mtime"] == mtime:
+            if cacheable_install and cached_details["mtime"] == mtime:
                 install = PythonInstall.from_json(**cached_details["install"])
             else:
                 self.raw_cache.pop(exe_path)
+                self._dirty_cache = True
 
         if install is None:
             install = self.query_install(exe_path, managed_by, metadata)
-            if install:
+            if install and cacheable_install:
                 self.raw_cache[exe_path] = {
                     "mtime": mtime,
                     "install": as_dict(install)
