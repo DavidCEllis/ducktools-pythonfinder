@@ -80,12 +80,15 @@ def get_path_pythons(
         if not os.path.exists(fld):
             continue
 
-        for install in get_folder_pythons(fld, finder=finder):
-            for path, manager in known_paths.items():
-                if os.path.commonpath((path, install.executable)) == path:
-                    install.managed_by = manager
-                    break
+        # Do the search like this to get subfolders
+        for path, manager in known_paths.items():
+            if os.path.commonpath((path, fld)) == path:
+                managed_by = manager
+                break
+        else:
+            managed_by = None
 
+        for install in get_folder_pythons(fld, finder=finder, managed_by=managed_by):
             name = os.path.basename(install.executable)
             if name in exe_names:
                 install.shadowed = True
