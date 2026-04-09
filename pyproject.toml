@@ -46,6 +46,8 @@ dev = [
     "mypy>=1.16",
 ]
 
+zipapp = ["pip>=26.0"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

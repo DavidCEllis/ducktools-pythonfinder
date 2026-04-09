@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python-version: "3.10"  # build with oldest supported python
+        python-version: "3.14"  # Build with 3.14 to ensure reannotate is included
     - name: Build the Zipapp
       run: >-
         python3 scripts/build_zipapp.py
