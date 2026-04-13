@@ -96,7 +96,7 @@ def _get_parser_class() -> type[argparse.ArgumentParser]:
         This prevents the unnecessary import.
         """
 
-        def _get_formatter(self):
+        def _get_formatter(self, file=None, *args, **kwargs):
             # Calculate width
             try:
                 columns = int(os.environ['COLUMNS'])
@@ -110,7 +110,13 @@ def _get_parser_class() -> type[argparse.ArgumentParser]:
                     columns = size.columns
 
             # noinspection PyArgumentList
-            return self.formatter_class(prog=self.prog, width=columns - 2)
+            formatter = self.formatter_class(prog=self.prog, width=columns - 2)
+            if sys.version_info >= (3, 15):  #
+                formatter._set_color(self.color, file=file)
+            elif sys.version_info >= (3, 14):
+                formatter._set_color(self.color)
+
+            return formatter
 
     return FixedArgumentParser
 

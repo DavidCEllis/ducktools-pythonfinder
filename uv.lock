@@ -170,7 +170,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
 ]
-zipapp-build = [
+zipapp = [
     { name = "pip" },
 ]
 
@@ -188,7 +188,7 @@ dev = [
     { name = "pytest", specifier = ">=8.4" },
     { name = "pytest-cov", specifier = ">=6.1" },
 ]
-zipapp-build = [{ name = "pip", specifier = ">=26.0" }]
+zipapp = [{ name = "pip", specifier = ">=26.0" }]
 
 [[package]]
 name = "exceptiongroup"
