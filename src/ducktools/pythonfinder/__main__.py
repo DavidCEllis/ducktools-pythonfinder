@@ -44,9 +44,7 @@ _laz = LazyImporter(
         ModuleImport("subprocess"),
         ModuleImport("sysconfig"),
         ModuleImport("platform"),
-        FromImport(".pythonorg_search", "PythonOrgSearch"),
         FromImport("packaging.specifiers", "SpecifierSet"),
-        FromImport("urllib.error", "URLError"),
     ],
     globs=globals()
 )
@@ -137,39 +135,9 @@ def get_parser() -> argparse.ArgumentParser:
         help="Clear the cache of Python install details"
     )
 
-    online = subparsers.add_parser(
-        "online",
-        help="Get links to binaries from python.org"
-    )
-
-    # Shared arguments
-    for p in [parser, online]:
-        p.add_argument("--min", help="Specify minimum Python version")
-        p.add_argument("--max", help="Specify maximum Python version")
-        p.add_argument("--compatible", help="Specify compatible Python version")
-
-    online.add_argument(
-        "--all-binaries",
-        action="store_true",
-        help="Provide *all* matching binaries and "
-             "not just the latest minor versions"
-    )
-    online.add_argument(
-        "--system",
-        action="store",
-        help="Get python installers for a different system (eg: Windows, Darwin, Linux)"
-    )
-    online.add_argument(
-        "--machine",
-        action="store",
-        help="Get python installers for a different architecture (eg: AMD64, ARM64, x86)"
-    )
-
-    online.add_argument(
-        "--prerelease",
-        action="store_true",
-        help="Include prerelease versions"
-    )
+    parser.add_argument("--min", help="Specify minimum Python version")
+    parser.add_argument("--max", help="Specify maximum Python version")
+    parser.add_argument("--compatible", help="Specify compatible Python version")
 
     return parser
 
@@ -263,47 +231,6 @@ def display_local_installs(
         print(f"| {version_str:>{max_version_len}s} | {executable:<{max_executable_len}s} |")
 
 
-def display_remote_binaries(
-    min_ver: str,
-    max_ver: str,
-    compatible: str,
-    all_binaries: bool,
-    system: str,
-    machine: str,
-    prerelease: bool,
-) -> None:
-    specs = []
-    if min_ver:
-        specs.append(f">={min_ver}")
-    if max_ver:
-        specs.append(f"<{max_ver}")
-    if compatible:
-        specs.append(f"~={compatible}")
-
-    spec = _laz.SpecifierSet(",".join(specs))
-
-    searcher = _laz.PythonOrgSearch(system=system, machine=machine)
-    if all_binaries:
-        releases = searcher.all_matching_binaries(spec, prereleases=prerelease)
-    else:
-        releases = searcher.latest_minor_binaries(spec, prereleases=prerelease)
-
-    headings = ["Python Version", "URL"]
-
-    if releases:
-        max_url_len = max(
-            len(headings[1]), max(len(release.url) for release in releases)
-        )
-        headings_str = f"| {headings[0]} | {headings[1]:<{max_url_len}s} |"
-
-        print(headings_str)
-        print(f"| {'-' * len(headings[0])} | {'-' * max_url_len} |")
-
-        for release in releases:
-            print(f"| {release.version:>14s} | {release.url:<{max_url_len}s} |")
-    else:
-        print("No Python releases found matching specification")
-
 
 def main() -> int:
     if sys.version_info < (3, 10):
@@ -319,21 +246,6 @@ def main() -> int:
 
         if vals.command == "clear-cache":
             purge_caches()
-        elif vals.command == "online":
-            system = vals.system if vals.system else _laz.platform.system()
-            machine = vals.machine if vals.machine else _laz.platform.machine()
-            try:
-                display_remote_binaries(
-                    vals.min,
-                    vals.max,
-                    vals.compatible,
-                    vals.all_binaries,
-                    system,
-                    machine,
-                    vals.prerelease,
-                )
-            except _laz.URLError:
-                print("Could not connect to python.org")
         else:
             display_local_installs(
                 min_ver=vals.min,
