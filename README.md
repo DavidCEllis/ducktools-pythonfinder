@@ -35,28 +35,6 @@ Python versions listed can be restricted by using the `--max`, `--min` and
 `--compatible` options to the command. These roughly translate to `>=` for min, `<` for max
 and `~=` for compatible in python version specifiers.
 
-If you wish to find the latest binaries available from python.org for your platform
-(or sources on Linux) there is the additional `online` command with some extra flags.
-
-By default it will fetch the latest patches for each Python release (eg: 2.7.18 for 2.7) for
-the hardware you're on. The filters for local versions also work.
-
-* `--all-binaries` will get you all binary releases that match the restrictions.
-* `--system` and `--machine` allow you to specify a platform other than the one you are using
-  (the values you give should match platform.system() and platform.machine() return values).
-* `--prerelease` includes prerelease versions in the search.
-
-Example:
-`python pythonfinder.pyz online --min 3.10 --system Windows --machine AMD64`
-
-```
-| Python Version | URL                                                                |
-| -------------- | ------------------------------------------------------------------ |
-|         3.12.5 | https://www.python.org/ftp/python/3.12.5/python-3.12.5-amd64.exe   |
-|         3.11.9 | https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe   |
-|        3.10.11 | https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe |
-```
-
 ## Library Usage ##
 
 ### Local installs ###
@@ -113,31 +91,11 @@ PythonInstall(version=(3, 13, 0, 'candidate', 1), executable='~\\.pyenv\\pyenv-w
 There is now a submodule to search for virtual environments.
 
 ```python
+import os
 from ducktools.pythonfinder.venv import list_python_venvs
 
-for venv in list_python_venvs():
+for venv in list_python_venvs(recursive=False, search_parent_folders=True):
     print(venv.executable)
-```
-
-### Python.org search ###
-
-Python.org searches are handled by the `ducktools.pythonfinder.pythonorg_search` module.
-
-```python
-from packaging.specifiers import SpecifierSet
-from ducktools.pythonfinder.pythonorg_search import PythonOrgSearch
-
-# If system and machine are not provided this uses platform.system() and platform.machine()
-searcher = PythonOrgSearch(system="Windows", machine="AMD64")
-
-all_releases = searcher.releases
-all_release_files = searcher.release_files
-all_312_releases = searcher.matching_versions(SpecifierSet("~=3.12.0"))
-all_312_downloads = searcher.matching_versions(SpecifierSet("~=3.12.0"))
-all_312_311_win_binaries = searcher.all_matching_binaries(SpecifierSet(">=3.11.0, <3.13"))
-latest_312_311_win_binaries = searcher.latest_minor_binaries(SpecifierSet(">=3.11.0, <3.13"))
-latest_matching_win_binary = searcher.latest_binary_match(SpecifierSet(">=3.10"))
-latest_prerelease_binary = searcher.latest_binary_match(SpecifierSet(">=3.10"), prereleases=True)
 ```
 
 ## Why? ##
@@ -153,4 +111,4 @@ satisfy such a requirement.
 That module appears to require searching for a specific version and will find venv pythons.
 
 In contrast `ducktools.pythonfinder` simply yields python installs as they are discovered
-and will attempt to avoid returning virtualenv python installs
+and will attempt to avoid returning virtualenv python installs (unless you are searching for venvs)
