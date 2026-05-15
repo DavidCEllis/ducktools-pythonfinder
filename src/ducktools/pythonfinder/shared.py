@@ -278,6 +278,10 @@ class DetailFinder(Prefab):
         if metadata:
             output["metadata"].update(metadata)
 
+        if exe_path != output["executable"]:
+            output["metadata"]["sys_executable"] = output["executable"]
+            output["executable"] = exe_path
+
         install = PythonInstall.from_json(**output, managed_by=managed_by)
 
         return install
