@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import re
 import sys
 import os.path
 from types import SimpleNamespace
@@ -30,6 +31,7 @@ import pytest
 from ducktools.pythonfinder.shared import DetailFinder, PythonInstall
 
 fake_python_path = "/path/to/python" if sys.platform != "win32" else r"X:\path\to\python"
+json_python_path = re.escape(fake_python_path)
 example_json = f"""
 {{
     "version": [3, 13, 2, "final", 0],
