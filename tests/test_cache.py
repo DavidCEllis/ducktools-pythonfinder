@@ -1,18 +1,18 @@
 # ducktools-pythonfinder
 # MIT License
-# 
+#
 # Copyright (c) 2025 David C Ellis
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import re
+import sys
 import os.path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -28,15 +30,16 @@ import pytest
 
 from ducktools.pythonfinder.shared import DetailFinder, PythonInstall
 
-fake_python_path = "/path/to/python"
-example_json = """
-{
-    "version": [3, 13, 2, "final", 0], 
-    "executable": "/path/to/python", 
-    "architecture": "64bit", 
-    "implementation": "cpython", 
-    "metadata": {"freethreaded": false}
-}
+fake_python_path = "/path/to/python" if sys.platform != "win32" else r"X:\path\to\python"
+json_python_path = re.escape(fake_python_path)
+example_json = f"""
+{{
+    "version": [3, 13, 2, "final", 0],
+    "executable": "{json_python_path}",
+    "architecture": "64bit",
+    "implementation": "cpython",
+    "metadata": {{"freethreaded": false}}
+}}
 """.strip()
 
 example_install = PythonInstall(
@@ -160,7 +163,7 @@ def test_clear_invalid_runtimes(run_mock, stat_mock, temp_finder):
         with temp_finder, patch("os.path.exists") as exists_patch:
             exists_patch.return_value = True
             temp_finder.clear_invalid_runtimes()
-        
+
         save_mock.assert_not_called()
         assert os.path.abspath(fake_python_path) in temp_finder.raw_cache
 
