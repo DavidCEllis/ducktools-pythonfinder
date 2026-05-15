@@ -249,6 +249,7 @@ def test_pypy_version(fs, temp_finder):
 
     ver_folder = "pypy3.10-7.3.15"
     tmpdir = os.path.expanduser("~/.pyenv/versions")
+    homedir = os.path.expanduser("~")
 
     mock_output = textwrap.dedent(
         """
@@ -282,10 +283,13 @@ def test_pypy_version(fs, temp_finder):
 
         out_version = PythonInstall(
             version=(3, 10, 13, "final", 0),
-            executable="~/.pyenv/versions/pypy3.10-7.3.15/bin/pypy",
+            executable=f"{homedir}/.pyenv/versions/pypy3.10-7.3.15/bin/python",
             architecture="64bit",
             implementation="pypy",
-            metadata={"pypy_version": (7, 3, 15, "final", 0)},
+            metadata={
+                "pypy_version": (7, 3, 15, "final", 0),
+                "sys_executable": "~/.pyenv/versions/pypy3.10-7.3.15/bin/pypy"
+            },
             managed_by="pyenv",
         )
 
