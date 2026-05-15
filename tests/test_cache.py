@@ -35,7 +35,7 @@ json_python_path = re.escape(fake_python_path)
 example_json = f"""
 {{
     "version": [3, 13, 2, "final", 0],
-    "executable": "{fake_python_path}",
+    "executable": "{json_python_path}",
     "architecture": "64bit",
     "implementation": "cpython",
     "metadata": {{"freethreaded": false}}
