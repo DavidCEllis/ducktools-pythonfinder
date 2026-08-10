@@ -64,6 +64,10 @@ testpaths = [
     "tests",
 ]
 
+[tool.ruff.lint]
+# I001 / RUF023 - Import, __all__ and __slots__ sorting rules.
+ignore = ["I001", "RUF022", "RUF023"]
+
 [tool.uv]
 exclude-newer = "1 week"
 
