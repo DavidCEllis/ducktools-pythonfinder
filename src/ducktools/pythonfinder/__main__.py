@@ -109,7 +109,7 @@ def _get_parser_class() -> type[argparse.ArgumentParser]:
 
             # noinspection PyArgumentList
             formatter = self.formatter_class(prog=self.prog, width=columns - 2)
-            if sys.version_info >= (3, 15):  #
+            if sys.version_info >= (3, 15):
                 formatter._set_color(self.color, file=file)
             elif sys.version_info >= (3, 14):
                 formatter._set_color(self.color)
@@ -120,7 +120,7 @@ def _get_parser_class() -> type[argparse.ArgumentParser]:
 
 
 def get_parser() -> argparse.ArgumentParser:
-    FixedArgumentParser = _get_parser_class()  # noqa
+    FixedArgumentParser = _get_parser_class()
 
     parser = FixedArgumentParser(
         prog="ducktools-pythonfinder",
@@ -130,14 +130,15 @@ def get_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=False)
 
-    clear_cache = subparsers.add_parser(
+    _ = subparsers.add_parser(
         "clear-cache",
         help="Clear the cache of Python install details"
     )
 
-    parser.add_argument("--min", help="Specify minimum Python version")
-    parser.add_argument("--max", help="Specify maximum Python version")
-    parser.add_argument("--compatible", help="Specify compatible Python version")
+    specifiers = parser.add_argument_group("Version specifiers", "Specifiers for Python version filters")
+    specifiers.add_argument("--min", help="Specify minimum Python version")
+    specifiers.add_argument("--max", help="Specify maximum Python version")
+    specifiers.add_argument("--compatible", help="Specify compatible Python version")
 
     return parser
 
@@ -147,12 +148,10 @@ def display_local_installs(
     max_ver: str | None = None,
     compatible: str | None = None,
 ) -> None:
-    if min_ver:
-        min_ver_tuple = version_str_to_tuple(min_ver)
-    if max_ver:
-        max_ver_tuple = version_str_to_tuple(max_ver)
-    if compatible:
-        compatible_spec = _laz.SpecifierSet(f"~={compatible}")
+
+    min_ver_tuple = version_str_to_tuple(min_ver) if min_ver else None
+    max_ver_tuple = version_str_to_tuple(max_ver) if max_ver else None
+    compatible_spec = _laz.SpecifierSet(f"~={compatible}") if compatible else None
 
     installs = list_python_installs()
 
@@ -168,11 +167,11 @@ def display_local_installs(
 
     # First collect the strings
     for install in installs:
-        if min_ver and install.version < min_ver_tuple:
-            continue
-        elif max_ver and install.version > max_ver_tuple:
-            continue
-        elif compatible and not compatible_spec.contains(install.version_str):
+        if (
+            (min_ver_tuple and install.version < min_ver_tuple)
+            or (max_ver_tuple and install.version > max_ver_tuple)
+            or (compatible_spec and not compatible_spec.contains(install.version_str))
+        ):
             continue
 
         version_str = install.version_str
@@ -233,11 +232,11 @@ def display_local_installs(
 
 
 def main() -> int:
-    if sys.version_info < (3, 10):
+    if sys.version_info < (3, 12):  # ruff: ignore[UP036]
         v = sys.version_info
         raise UnsupportedPythonError(
             f"Python {v.major}.{v.minor}.{v.micro} is not supported. "
-            f"ducktools.pythonfinder requires Python 3.10 or later."
+            f"ducktools.pythonfinder requires Python 3.12 or later."
         )
 
     if sys.argv[1:]:

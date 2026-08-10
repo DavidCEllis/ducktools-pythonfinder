@@ -80,7 +80,7 @@ def get_details():
                     "graalpy_version": version_str_to_tuple(ver)
                 }
             except (NameError, ValueError):
-                metadata = {"{}_version".format(implementation): sys.implementation.version}            
+                metadata = {"{}_version".format(implementation): sys.implementation.version}
         elif implementation != "cpython":  # pragma: no cover
             if implementation == "micropython":
                 imp_ver = sys.implementation.version[:3]
@@ -110,7 +110,7 @@ def get_details():
         architecture = "64bit" if (sys.maxsize > 2**32) else "32bit"
     else:
         architecture = "32bit" if (struct.calcsize("P") == 4) else "64bit"
-    
+
     install = dict(
         version=list(sys.version_info),
         executable=sys.executable,

@@ -36,7 +36,7 @@ import os.path
 import winreg
 from _collections_abc import Iterator
 
-from ..shared import DetailFinder, PythonInstall, version_str_to_tuple
+from ..shared import DetailFinder, PythonInstall
 
 exclude_companies = {
     "PyLauncher",  # pylauncher is special cased to be ignored
@@ -90,7 +90,7 @@ def get_registered_pythons(finder: DetailFinder | None = None) -> Iterator[Pytho
                             comp_metadata[f"Company{name}"] = data
 
                         for py_keyname in enum_keys(company_key):
-                            metadata = {
+                            metadata: dict = {
                                 **comp_metadata,
                                 "Tag": py_keyname,
                             }
@@ -114,16 +114,15 @@ def get_registered_pythons(finder: DetailFinder | None = None) -> Iterator[Pytho
 
                                 metadata["InWindowsRegistry"] = True
 
-                            if python_path:
-                                # Pyenv puts architecture information in the Version value for some reason
-                                if os.path.isfile(python_path):
-                                    details = finder.get_install_details(
-                                        python_path,
-                                        managed_by=metadata["Company"],
-                                        metadata=metadata,
-                                    )
-                                    if details:
-                                        yield details
+                            # Pyenv puts architecture information in the Version value for some reason
+                            if python_path and os.path.isfile(python_path):
+                                details = finder.get_install_details(
+                                    python_path,
+                                    managed_by=metadata["Company"],
+                                    metadata=metadata,
+                                )
+                                if details:
+                                    yield details
 
             finally:
                 if base_key:

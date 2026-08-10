@@ -64,7 +64,7 @@ if sys.platform == "win32":
                 f"Could not find local app data folder {_local_app_folder}"
             )
     else:
-        raise EnvironmentError(
+        raise RuntimeError(
             "Environment variable %LOCALAPPDATA% "
             "for local application data folder location "
             "not found"
@@ -139,7 +139,7 @@ class DetailsScript(Prefab):
     """
     _source_code: str | None = attribute(default=None, private=True)
 
-    def get_source_code(self):
+    def get_source_code(self) -> str:
         if self._source_code is None:
             if os.path.exists(details_file := details_script.__file__):
                 with open(details_file) as f:
@@ -153,6 +153,8 @@ class DetailsScript(Prefab):
                 self._source_code = script.read_text()
             else:
                 raise FileNotFoundError(f"Could not find {details_script.__file__!r}")
+
+        assert isinstance(self._source_code, str)
 
         return self._source_code
 
@@ -193,6 +195,9 @@ class DetailFinder(Prefab):
                     self._raw_cache = _laz.json.load(f)
             except (_laz.json.JSONDecodeError, FileNotFoundError):
                 self._raw_cache = {}
+
+        assert isinstance(self._raw_cache, dict)
+
         return self._raw_cache
 
     def save(self) -> None:
@@ -207,7 +212,7 @@ class DetailFinder(Prefab):
         Remove cache entries where the python.exe no longer exists
         """
         removed_runtimes: set[str] = set()
-        for exe_path in self.raw_cache.copy().keys():
+        for exe_path in self.raw_cache.copy():
             if not os.path.exists(exe_path):
                 self.raw_cache.pop(exe_path)
                 removed_runtimes.add(exe_path)
@@ -338,7 +343,7 @@ class PythonInstall(Prefab):
         if len(version) == 3:
             # Micropython gives an invalid 3 part version here
             # Add the extras to avoid breaking
-            self.version = tuple([*version, "final", 0])  # type: ignore
+            self.version = (*version, "final", 0)  # type: ignore
         else:
             self.version = version  # type: ignore
 
@@ -371,7 +376,7 @@ class PythonInstall(Prefab):
         if self._implementation_version is None:
             if implementation_ver := self.metadata.get(f"{self.implementation}_version"):
                 if len(implementation_ver) == 3:
-                    self._implementation_version = tuple([*implementation_ver, "final", 0])  # type: ignore
+                    self._implementation_version = (*implementation_ver, "final", 0)  # type: ignore
                 else:
                     self._implementation_version = implementation_ver
             else:
@@ -568,15 +573,17 @@ def _implementation_from_uv_dir(
 def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
     # This takes some shortcuts over the regular pythonfinder
     # As the UV folders give the python version and the implementation
-    if uv_python_path := get_uv_python_path():
-        if os.path.exists(uv_python_path):
-            finder = DetailFinder() if finder is None else finder
+    if (
+        (uv_python_path := get_uv_python_path())
+        and os.path.exists(uv_python_path)
+    ):
+        finder = DetailFinder() if finder is None else finder
 
-            with finder, os.scandir(uv_python_path) as fld:
-                for f in fld:
-                    if (
-                        f.is_dir()
-                        and not f.is_symlink()
-                        and (install := _implementation_from_uv_dir(f, finder=finder))
-                    ):
-                        yield install
+        with finder, os.scandir(uv_python_path) as fld:
+            for f in fld:
+                if (
+                    f.is_dir()
+                    and not f.is_symlink()
+                    and (install := _implementation_from_uv_dir(f, finder=finder))
+                ):
+                    yield install

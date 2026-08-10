@@ -179,9 +179,7 @@ class PythonVEnv(Prefab):
 
     @property
     def parent_exists(self) -> bool:
-        if self.parent_executable and os.path.exists(self.parent_executable):
-            return True
-        return False
+        return bool(self.parent_executable and os.path.exists(self.parent_executable))
 
     def get_parent_install(
         self,

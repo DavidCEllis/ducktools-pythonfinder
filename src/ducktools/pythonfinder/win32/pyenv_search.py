@@ -46,9 +46,8 @@ def get_pyenv_pythons(
     finder: DetailFinder | None = None,
 ) -> Iterator[PythonInstall]:
 
-    if versions_folder is None:
-        if pyenv_root := get_pyenv_root():
-            versions_folder = os.path.join(pyenv_root, "versions")
+    if versions_folder is None and (pyenv_root := get_pyenv_root()):
+        versions_folder = os.path.join(pyenv_root, "versions")
 
     if versions_folder is None or not os.path.exists(versions_folder):
         return
