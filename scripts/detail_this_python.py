@@ -27,6 +27,6 @@ Get the PythonInstall for the python version running
 
 import sys
 
-from ducktools.pythonfinder.shared import get_install_details
+from ducktools.pythonfinder.shared import DetailFinder
 
-print(get_install_details(sys.executable))
+print(DetailFinder().get_install_details(sys.executable))
