@@ -68,6 +68,11 @@ testpaths = [
 # I001 / RUF023 - Import, __all__ and __slots__ sorting rules.
 ignore = ["I001", "RUF022", "RUF023"]
 
+[tool.ruff.lint.extend-per-file-ignores]
+# The details script is written to run under ancient Python as well as new Python
+# As such it can't use features that didn't exist in Python2
+"src/ducktools/pythonfinder/details_script.py" = ["C408", "UP032"]
+
 [tool.uv]
 exclude-newer = "1 week"
 
