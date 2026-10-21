@@ -84,9 +84,7 @@ def _implementation_from_uv_dir(
 
 
 def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
-    # This takes some shortcuts over the regular pythonfinder
-    # As the UV folders give the python version and the implementation
-
+    # Specifically search the UV python folders
     if (
         (uv_python_path := get_uv_python_path())
         and os.path.exists(uv_python_path)
@@ -94,26 +92,21 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
         finder = DetailFinder() if finder is None else finder
 
         with finder, os.scandir(uv_python_path) as fld:
-            discovered_pythons = []
-            symlinked = set()
+            flds_and_installs = []
+            aliased = set()
 
+            # We want the shorter aliases if they exist so first
+            # get a list of aliased python installs, then yield by filtering.
             for f in fld:
                 if (
                     f.is_dir()
                     and (install := _implementation_from_uv_dir(f, finder=finder))
                 ):
-                    discovered_pythons.append(install)
-                    if (
-                        os.path.islink(install.executable)
-                        and (os.path.realpath(install.executable) != install.executable)
-                    ):
-                        symlinked.add(os.path.realpath(install.executable))
+                    flds_and_installs.append((f.path, install))
+                    if f.is_symlink():
+                        aliased.add(os.path.realpath(f.path))
 
-        discovered_pythons.sort(key=lambda py: py.executable)
-
-        for py in discovered_pythons:
-            if py.executable in symlinked:
-                # If the executable is in symlinks then there is another
-                # copy that symlinks to it and it can be skipped
-                continue
-            yield py
+            for fld, install in flds_and_installs:
+                if fld in aliased:
+                    continue
+                yield install
