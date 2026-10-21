@@ -35,10 +35,9 @@ from ..shared import (
     DetailFinder,
     PythonInstall,
     get_folder_pythons,
-    get_uv_pythons,
-    get_uv_python_path
 )
 from .pyenv_search import get_pyenv_pythons, get_pyenv_root
+from ..uv_search import get_uv_python_path, get_uv_pythons
 
 
 KNOWN_MANAGED_PATHS = {

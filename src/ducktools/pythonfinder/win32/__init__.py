@@ -29,9 +29,10 @@ try:
 except ImportError:
     from collections.abc import Iterator
 
-from ..shared import PythonInstall, get_uv_pythons, DetailFinder
+from ..shared import PythonInstall, DetailFinder
 from .pyenv_search import get_pyenv_pythons
 from .registry_search import get_registered_pythons
+from ..uv_search import get_uv_pythons
 
 
 def get_python_installs(

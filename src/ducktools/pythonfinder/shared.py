@@ -364,7 +364,7 @@ class PythonInstall(Prefab):
         return version_tuple_to_str(self.version)
 
     @property
-    def implementation_version(self) -> tuple[int, int, int, str, int] | None:
+    def implementation_version(self) -> tuple[int, int, int, str, int]:
         """
         The implementation version may differ from the 'Version' for implementations
         other than CPython.
@@ -375,12 +375,19 @@ class PythonInstall(Prefab):
         """
         if self._implementation_version is None:
             if implementation_ver := self.metadata.get(f"{self.implementation}_version"):
-                if len(implementation_ver) == 3:
-                    self._implementation_version = (*implementation_ver, "final", 0)  # type: ignore
+                if len(implementation_ver) == 5:
+                    ver_tuple = implementation_ver
+                elif len(implementation_ver) == 3:
+                    ver_tuple = (*implementation_ver, "final", 0)
                 else:
-                    self._implementation_version = implementation_ver
+                    raise ValueError(
+                        f"Implementation version number {implementation_ver!r} "
+                        "does not match known Python implementation version formats"
+                    )
             else:
-                self._implementation_version = self.version
+                ver_tuple = self.version
+
+            self._implementation_version = ver_tuple
 
         return self._implementation_version
 
@@ -506,84 +513,4 @@ def get_folder_pythons(
 
                 install = finder.get_install_details(p, managed_by=managed_by)
                 if install:
-                    yield install
-
-
-# UV Specific finder
-def get_uv_python_path() -> str | None:
-    # Attempt to get cache
-    try:
-        with open(INSTALLER_CACHE_PATH) as f:
-            installer_cache = _laz.json.load(f)
-    except (FileNotFoundError, _laz.json.JSONDecodeError):
-        installer_cache = {}
-
-    uv_python_dir = installer_cache.get("uv")
-    if uv_python_dir and os.path.exists(uv_python_dir):
-        return uv_python_dir
-
-    # Cache failed
-    try:
-        uv_python_find = _laz.subprocess.run(
-            ["uv", "python", "dir"],
-            check=True,
-            text=True,
-            capture_output=True
-        )
-    except (_laz.subprocess.CalledProcessError, FileNotFoundError):
-        uv_python_dir = None
-    else:
-        # remove newline
-        uv_python_dir = uv_python_find.stdout.strip()
-
-    # Fill cache and update the cache file
-    installer_cache["uv"] = uv_python_dir
-    os.makedirs(os.path.dirname(INSTALLER_CACHE_PATH), exist_ok=True)
-    with open(INSTALLER_CACHE_PATH, 'w') as f:
-        _laz.json.dump(installer_cache, f)
-
-    return uv_python_dir
-
-
-def _implementation_from_uv_dir(
-    direntry: os.DirEntry,
-    finder: DetailFinder | None = None,
-) -> PythonInstall | None:
-    if sys.platform == "win32":
-        python_paths = [
-            os.path.join(direntry, "python.exe"),
-            os.path.join(direntry, "bin/python.exe"),  # graalpy
-        ]
-    else:
-        python_paths = [
-            os.path.join(direntry, "bin/python")
-        ]
-
-    install: PythonInstall | None = None
-    finder = DetailFinder() if finder is None else finder
-
-    for pth in python_paths:
-        if os.path.exists(pth):
-            install = finder.get_install_details(pth, managed_by="Astral")
-            break
-
-    return install
-
-
-def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
-    # This takes some shortcuts over the regular pythonfinder
-    # As the UV folders give the python version and the implementation
-    if (
-        (uv_python_path := get_uv_python_path())
-        and os.path.exists(uv_python_path)
-    ):
-        finder = DetailFinder() if finder is None else finder
-
-        with finder, os.scandir(uv_python_path) as fld:
-            for f in fld:
-                if (
-                    f.is_dir()
-                    and not f.is_symlink()
-                    and (install := _implementation_from_uv_dir(f, finder=finder))
-                ):
                     yield install

@@ -29,7 +29,8 @@ except ImportError:
     from collections.abc import Iterator
 
 from .. import linux
-from ..shared import get_uv_pythons, DetailFinder,PythonInstall
+from ..shared import DetailFinder, PythonInstall
+from ..uv_search import get_uv_pythons
 
 
 # This is the difference from the linux methods
