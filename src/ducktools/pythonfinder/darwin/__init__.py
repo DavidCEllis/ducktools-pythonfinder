@@ -29,7 +29,8 @@ except ImportError:
     from collections.abc import Iterator
 
 from .. import linux
-from ..shared import get_uv_pythons, DetailFinder,PythonInstall
+from ..shared import DetailFinder, PythonInstall
+from ..uv_search import get_uv_pythons
 
 
 # This is the difference from the linux methods
@@ -63,8 +64,8 @@ def get_python_installs(
     finder = DetailFinder() if finder is None else finder
 
     chain_commands = [
-        linux.get_pyenv_pythons(finder=finder),
         get_uv_pythons(finder=finder),
+        linux.get_pyenv_pythons(finder=finder),
         get_path_pythons(finder=finder),
     ]
     with finder:

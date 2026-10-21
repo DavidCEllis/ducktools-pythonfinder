@@ -22,7 +22,6 @@
 # SOFTWARE.
 import json
 import os
-import re
 import subprocess
 
 from tempfile import TemporaryDirectory
@@ -32,7 +31,7 @@ import unittest.mock as mock
 
 import pytest
 
-from ducktools.pythonfinder.shared import (
+from ducktools.pythonfinder.uv_search import (
     get_uv_python_path,
     get_uv_pythons,
 )
