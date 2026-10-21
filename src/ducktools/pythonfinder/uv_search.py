@@ -10,6 +10,7 @@ except ImportError:
 from ducktools.lazyimporter import LazyImporter, ModuleImport
 
 from .shared import (
+    _IdentifyingTuple,
     INSTALLER_CACHE_PATH,
     DetailFinder,
     PythonInstall,
@@ -104,7 +105,7 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
         finder = DetailFinder() if finder is None else finder
 
         with finder, os.scandir(uv_python_path) as fld:
-            unique_releases: dict[tuple[str, str, str, bool], list[PythonInstall]] = {}
+            unique_releases: dict[_IdentifyingTuple, list[PythonInstall]] = {}
 
             # Create a folder of stdlib paths to folders
             for f in fld:
@@ -112,12 +113,7 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
                     f.is_dir()
                     and (install := _implementation_from_uv_dir(f, finder=finder))
                 ):
-                    identifier = (
-                        install.version_str,
-                        install.implementation,
-                        install.implementation_version_str,
-                        install.metadata.get("freethreaded", False),
-                    )
+                    identifier = install._identifying_tuple
                     release_group = unique_releases.setdefault(identifier, [])
                     release_group.append(install)
 

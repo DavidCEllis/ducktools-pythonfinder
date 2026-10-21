@@ -22,14 +22,12 @@
 # SOFTWARE.
 from __future__ import annotations
 
-import itertools
-
 try:
     from _collections_abc import Iterator
 except ImportError:
     from collections.abc import Iterator
 
-from ..shared import PythonInstall, DetailFinder
+from ..shared import _IdentifyingTuple, PythonInstall, DetailFinder
 from .pyenv_search import get_pyenv_pythons
 from .registry_search import get_registered_pythons
 from ..uv_search import get_uv_pythons
@@ -45,12 +43,28 @@ def get_python_installs(
     finder = DetailFinder() if finder is None else finder
 
     with finder:
-        for py in itertools.chain(
-            get_registered_pythons(),
-            get_pyenv_pythons(finder=finder),
-            get_uv_pythons(finder=finder),
-        ):
-            # Compare by stdlib paths for uniqueness
+        uv_matches: dict[_IdentifyingTuple, PythonInstall] = {
+            py._identifying_tuple: py
+            for py in get_uv_pythons(finder=finder)
+        }
+
+        for py in get_registered_pythons():
+            if match := uv_matches.get(py._identifying_tuple):
+                # Registry entries have better metadata, update the metadata in the retrieved entries
+                match.metadata.update(py.metadata)
+            else:
+                stdlib_path = py.paths.get("stdlib")
+                if stdlib_path:
+                    if stdlib_path not in listed_stdlibs:
+                        yield py
+                        listed_stdlibs.add(stdlib_path)
+                elif py.executable not in listed_bins:
+                    yield py
+                    listed_bins.add(py.executable)
+
+        yield from uv_matches.values()
+
+        for py in get_pyenv_pythons(finder=finder):
             stdlib_path = py.paths.get("stdlib")
             if stdlib_path:
                 if stdlib_path not in listed_stdlibs:

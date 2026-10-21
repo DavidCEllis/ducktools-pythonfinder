@@ -49,6 +49,8 @@ _laz = LazyImporter(
     ]
 )
 
+type _IdentifyingTuple = tuple[str | None, str, str, str, bool]
+
 FULL_PY_VER_RE = r"(?P<major>\d+)\.(?P<minor>\d+)\.?(?P<micro>\d*)-?(?P<releaselevel>a|b|c|rc)?(?P<serial>\d*)?"
 
 
@@ -397,6 +399,21 @@ class PythonInstall(Prefab):
         :return: Version of the implementation as a string
         """
         return version_tuple_to_str(self.implementation_version)
+
+    @property
+    def _freethreaded(self):
+        return self.metadata.get("freethreaded", False)
+
+    @property
+    def _identifying_tuple(self) -> _IdentifyingTuple:
+        # An identifying tuple to be used for deduplication
+        return (
+            self.managed_by,
+            self.version_str,
+            self.implementation,
+            self.implementation_version_str,
+            self._freethreaded,
+        )
 
     @classmethod
     def from_str(
