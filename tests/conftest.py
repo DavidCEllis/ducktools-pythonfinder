@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os
 import os.path
 import sys
 import sysconfig
@@ -32,6 +33,10 @@ import pytest
 from ducktools.pythonfinder import details_script
 from ducktools.pythonfinder.shared import DetailFinder
 
+# Prevent UV from registering the python installs added during testing
+# Prevent UV from discovering python installs that it shouldn't care about
+os.environ["UV_PYTHON_NO_REGISTRY"] = "TRUE"
+os.environ["UV_PYTHON_SEARCH_PATH"] = "/dev/null"
 
 @pytest.fixture(scope="session")
 def sources_folder():
