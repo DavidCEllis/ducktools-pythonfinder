@@ -85,15 +85,18 @@ def _implementation_from_uv_dir(
 
 def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
     """
-    Search UVs python folders for python installs.
+    Search UVs python folders for unique python installs.
 
-    If you have CPython 3.x.y installed in 3.x.y and 3.x directories
+    If multiple folders are found with the same Python version,
+    implementation name and implementation version then only the executable
+    with the shortest path will be given.
+
+    So if you have CPython 3.x.y installed in 3.x.y and 3.x directories
     only the install with the 3.x path will be given. This is the
     case even if the 3.x path is a symlink to the 3.x.y folder.
-
-    Alternate implementations such as Pypy and GraalPy will still
-    be shown separately from any CPython installs.
     """
+    # Filtering is done by the triple of
+    # (python version, implementation name, implementation version)
     if (
         (uv_python_path := get_uv_python_path())
         and os.path.exists(uv_python_path)
