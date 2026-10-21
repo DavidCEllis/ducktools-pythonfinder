@@ -87,9 +87,12 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
     """
     Search UVs python folders for python installs.
 
-    This yields installs with the shortest executable path that point
-    towards the same standard library path. Meaning if 3.14.8 is aliased
-    as 3.14, only the 3.14 path will be yielded.
+    If you have CPython 3.x.y installed in 3.x.y and 3.x directories
+    only the install with the 3.x path will be given. This is the
+    case even if the 3.x path is a symlink to the 3.x.y folder.
+
+    Alternate implementations such as Pypy and GraalPy will still
+    be shown separately from any CPython installs.
     """
     if (
         (uv_python_path := get_uv_python_path())
@@ -98,7 +101,7 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
         finder = DetailFinder() if finder is None else finder
 
         with finder, os.scandir(uv_python_path) as fld:
-            unique_stdlibs = {}
+            unique_releases: dict[tuple[str, str, str], list[PythonInstall]] = {}
 
             # Create a folder of stdlib paths to folders
             for f in fld:
@@ -106,14 +109,15 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
                     f.is_dir()
                     and (install := _implementation_from_uv_dir(f, finder=finder))
                 ):
-                    if stdlib_path := install.paths.get("stdlib"):
-                        libs = unique_stdlibs.setdefault(stdlib_path, [])
-                        libs.append(install)
-                    else:
-                        # Could not find stdlib to compare, just yield
-                        yield install
+                    identifier = (
+                        install.version_str,
+                        install.implementation,
+                        install.implementation_version_str,
+                    )
+                    release_group = unique_releases.setdefault(identifier, [])
+                    release_group.append(install)
 
-            for install_group in unique_stdlibs.values():
+            for install_group in unique_releases.values():
                 # Sort the group by path length so the shortest item is first
                 install_group.sort(key=lambda py: len(py.executable))
                 yield install_group[0]
