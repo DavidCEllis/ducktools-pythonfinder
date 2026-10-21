@@ -401,7 +401,7 @@ class PythonInstall(Prefab):
         return version_tuple_to_str(self.implementation_version)
 
     @property
-    def _freethreaded(self):
+    def freethreaded(self):
         return self.metadata.get("freethreaded", False)
 
     @property
@@ -412,7 +412,7 @@ class PythonInstall(Prefab):
             self.version_str,
             self.implementation,
             self.implementation_version_str,
-            self._freethreaded,
+            self.freethreaded,
         )
 
     @classmethod
