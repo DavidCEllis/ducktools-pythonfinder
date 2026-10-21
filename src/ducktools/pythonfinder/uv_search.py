@@ -84,7 +84,13 @@ def _implementation_from_uv_dir(
 
 
 def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
-    # Specifically search the UV python folders
+    """
+    Search UVs python folders for python installs.
+
+    This yields installs with the shortest executable path that point
+    towards the same standard library path. Meaning if 3.14.8 is aliased
+    as 3.14, only the 3.14 path will be yielded.
+    """
     if (
         (uv_python_path := get_uv_python_path())
         and os.path.exists(uv_python_path)
@@ -92,21 +98,22 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
         finder = DetailFinder() if finder is None else finder
 
         with finder, os.scandir(uv_python_path) as fld:
-            flds_and_installs = []
-            aliased = set()
+            unique_stdlibs = {}
 
-            # We want the shorter aliases if they exist so first
-            # get a list of aliased python installs, then yield by filtering.
+            # Create a folder of stdlib paths to folders
             for f in fld:
                 if (
                     f.is_dir()
                     and (install := _implementation_from_uv_dir(f, finder=finder))
                 ):
-                    flds_and_installs.append((f.path, install))
-                    if f.is_symlink():
-                        aliased.add(os.path.realpath(f.path))
+                    if stdlib_path := install.paths.get("stdlib"):
+                        libs = unique_stdlibs.setdefault(stdlib_path, [])
+                        libs.append(install)
+                    else:
+                        # Could not find stdlib to compare, just yield
+                        yield install
 
-            for fld, install in flds_and_installs:
-                if fld in aliased:
-                    continue
-                yield install
+            for install_group in unique_stdlibs.values():
+                # Sort the group by path length so the shortest item is first
+                install_group.sort(key=lambda py: len(py.executable))
+                yield install_group[0]
