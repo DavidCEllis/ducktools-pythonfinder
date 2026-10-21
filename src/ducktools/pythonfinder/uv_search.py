@@ -88,8 +88,8 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
     Search UVs python folders for unique python installs.
 
     If multiple folders are found with the same Python version,
-    implementation name and implementation version then only the executable
-    with the shortest path will be given.
+    implementation name and implementation version and freethreading support
+    then only the executable with the shortest path will be given.
 
     So if you have CPython 3.x.y installed in 3.x.y and 3.x directories
     only the install with the 3.x path will be given. This is the
@@ -104,7 +104,7 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
         finder = DetailFinder() if finder is None else finder
 
         with finder, os.scandir(uv_python_path) as fld:
-            unique_releases: dict[tuple[str, str, str], list[PythonInstall]] = {}
+            unique_releases: dict[tuple[str, str, str, bool], list[PythonInstall]] = {}
 
             # Create a folder of stdlib paths to folders
             for f in fld:
@@ -116,6 +116,7 @@ def get_uv_pythons(finder=None) -> Iterator[PythonInstall]:
                         install.version_str,
                         install.implementation,
                         install.implementation_version_str,
+                        install.metadata.get("freethreaded", False),
                     )
                     release_group = unique_releases.setdefault(identifier, [])
                     release_group.append(install)
