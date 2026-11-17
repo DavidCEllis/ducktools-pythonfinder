@@ -36,6 +36,11 @@ from ducktools.lazyimporter import LazyImporter, ModuleImport, FromImport
 
 from . import details_script
 
+if sys.version_info < (3, 15):
+    import types
+    frozendict = types.MappingProxyType
+
+
 _laz = LazyImporter(
     [
         FromImport("glob", "glob"),
@@ -337,6 +342,7 @@ class PythonInstall(Prefab):
     shadowed: bool = attribute(default=False, serialize=False)
     _implementation_version: tuple[int, int, int, str, int] | None = attribute(default=None, private=True)
     _real_executable: str | None = attribute(default=None, private=True)
+    _pip_version_str: str | None = attribute(default=None, private=True)
 
     def __prefab_post_init__(
         self,
@@ -469,22 +475,27 @@ class PythonInstall(Prefab):
 
     def get_pip_version(self) -> str | None:
         """
-        Get the version of pip installed on a python install.
+        Get the version of ensurepip installed on a python install.
+
+        This is the version of pip that will be used to create venvs
 
         :return: None if pip is not found or the command fails
                  version number as string otherwise.
         """
-        pip_call = _laz.subprocess.run(
-            [self.executable, "-c", "import pip; print(pip.__version__, end='')"],
-            text=True,
-            capture_output=True,
-        )
+        if self._pip_version_str is None:
+            pip_call = _laz.subprocess.run(
+                [self.executable, "-c", "import ensurepip; print(ensurepip.version(), end='')"],
+                text=True,
+                capture_output=True,
+            )
 
-        # Pip call failed
-        if pip_call.returncode != 0:
-            return None
+            # Pip call failed
+            if pip_call.returncode != 0:
+                return None
 
-        return pip_call.stdout
+            self._pip_version_str = pip_call.stdout
+
+        return self._pip_version_str
 
 
 # Return type missing due to import requirements
