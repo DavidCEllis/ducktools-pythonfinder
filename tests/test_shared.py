@@ -94,7 +94,7 @@ def test_pip_version():
         pip_ver = inst.get_pip_version()
 
         mock_run.assert_called_once_with(
-            [sys.executable, "-c", "import pip; print(pip.__version__, end='')"],
+            [sys.executable, "-c", "import ensurepip; print(ensurepip.version(), end='')"],
             text=True,
             capture_output=True,
         )
@@ -116,7 +116,7 @@ def test_fail_pip_version():
         pip_ver = inst.get_pip_version()
 
         mock_run.assert_called_once_with(
-            [sys.executable, "-c", "import pip; print(pip.__version__, end='')"],
+            [sys.executable, "-c", "import ensurepip; print(ensurepip.version(), end='')"],
             text=True,
             capture_output=True,
         )
